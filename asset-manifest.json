@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/finalexamcountdown/static/css/main.7b5ea279.css",
+    "main.js": "/finalexamcountdown/static/js/main.1dce6ee1.js",
+    "index.html": "/finalexamcountdown/index.html",
+    "main.7b5ea279.css.map": "/finalexamcountdown/static/css/main.7b5ea279.css.map",
+    "main.1dce6ee1.js.map": "/finalexamcountdown/static/js/main.1dce6ee1.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7b5ea279.css",
+    "static/js/main.1dce6ee1.js"
+  ]
+}
