@@ -138,23 +138,33 @@ def parse_aims_course_title(html, code):
     return ''
 
 
+from concurrent.futures import ThreadPoolExecutor
+
+def fetch_single_aims_title(code):
+    try:
+        opener = make_opener()
+        html = post_form(
+            AIMS_SEARCH_URL,
+            urlencode({'searchType': 'modules', 'm': code}),
+            opener=opener,
+            referer=AIMS_SEARCH_URL,
+        )
+        return code, parse_aims_course_title(html, code)
+    except Exception:
+        return code, ''
+
+
 def fetch_aims_course_titles(codes):
     titles = {}
-    opener = make_opener()
-    for code in codes:
-        try:
-            html = post_form(
-                AIMS_SEARCH_URL,
-                urlencode({'searchType': 'modules', 'm': code}),
-                opener=opener,
-                referer=AIMS_SEARCH_URL,
-            )
-            title = parse_aims_course_title(html, code)
+    if not codes:
+        return titles
+    with ThreadPoolExecutor(max_workers=min(len(codes), 10)) as executor:
+        results = executor.map(fetch_single_aims_title, codes)
+        for code, title in results:
             if title:
                 titles[code] = title
-        except Exception:
-            continue
     return titles
+
 
 
 def enrich_exam_subjects(result):
