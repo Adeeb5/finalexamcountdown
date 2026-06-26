@@ -236,11 +236,13 @@ class Handler(SimpleHTTPRequestHandler):
                         'officialSubjectName': (row.get('subject_name') or '').strip(),
                         'lecturer': (row.get('lecturer') or '').strip(),
                     })
-                aims_titles = fetch_aims_course_titles(codes)
-                for subject in subjects:
-                    if aims_titles.get(subject['code']):
-                        subject['subjectName'] = aims_titles[subject['code']]
-                        subject['subjectSource'] = 'AIMS course search'
+                codes_needing_titles = [s['code'] for s in subjects if not s['subjectName']]
+                if codes_needing_titles:
+                    aims_titles = fetch_aims_course_titles(codes_needing_titles)
+                    for subject in subjects:
+                        if not subject['subjectName'] and aims_titles.get(subject['code']):
+                            subject['subjectName'] = aims_titles[subject['code']]
+                            subject['subjectSource'] = 'AIMS course search'
                 self.send_json(200, {'codes': codes, 'subjects': subjects})
                 return
 
