@@ -204,7 +204,7 @@
         .mini-meta, .mini-state { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.3; }
         .mini-state { color: var(--indigo); font-weight: 700; }
 
-        .section { padding: 72px 0; }
+        .section { padding: 72px 0; scroll-margin-top: 110px; }
         .section.light { background: var(--surface); }
         .section.soft { background: var(--soft); }
         .section.dark { color: #fff; background: linear-gradient(120deg, var(--royal), var(--navy)); }
@@ -719,7 +719,13 @@
                 setMessage({ type: 'info', text: `Fetching ${codes.join(', ')} from SIMS exam schedule...` });
                 try {
                     const { found, missing } = await fetchExamSchedule(codes);
-                    if (found.length) mergeExams(found);
+                    if (found.length) {
+                        mergeExams(found);
+                        setTimeout(() => {
+                            const el = document.getElementById('exams');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                    }
                     const parts = [];
                     if (found.length) parts.push(`Saved ${found.map(exam => exam.code).join(', ')}.`);
                     if (missing.length) parts.push(`No final exam record found for ${missing.join(', ')}.`);
@@ -745,7 +751,13 @@
                         subjectName: normalizeSubjectName(exam.subjectName || detailsByCode.get(exam.code)?.subjectName),
                         lecturer: detailsByCode.get(exam.code)?.lecturer || '',
                     }));
-                    if (enriched.length) mergeExams(enriched);
+                    if (enriched.length) {
+                        mergeExams(enriched);
+                        setTimeout(() => {
+                            const el = document.getElementById('exams');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                    }
                     setMessage({ type: enriched.length ? 'success' : 'error', text: `Timetable returned ${codes.length} course code(s). Saved ${enriched.length} final exam subject(s) with lecturer details when available. ${missing.length ? `No final exam record for: ${missing.join(', ')}.` : ''}` });
                 } catch (error) {
                     setMessage({ type: 'error', text: `Matric import could not complete from this static page. It may need a backend proxy if an external API blocks browser requests. Details: ${error.message}` });
