@@ -1,4 +1,4 @@
-﻿from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlencode
 from urllib.request import Request, build_opener, ProxyHandler, HTTPSHandler, HTTPCookieProcessor
 from urllib.error import HTTPError, URLError
@@ -182,7 +182,10 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         try:
             fields = parse_qs(self.read_post())
-            if self.path == '/api/exams':
+            path = self.headers.get('x-vercel-forwarded-path') or self.path
+            path = path.split('?')[0]
+
+            if path == '/api/exams' or path.endswith('/exams'):
                 codes = parse_codes(fields.get('codes', [''])[0] or fields.get('search_course', [''])[0])
                 if not codes:
                     self.send_json(400, {'error': 'No valid course codes provided.'})
@@ -191,7 +194,7 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(200, enrich_exam_subjects(parse_exam_rows(html, codes)))
                 return
 
-            if self.path == '/api/matric':
+            if path == '/api/matric' or path.endswith('/matric'):
                 student_id = (fields.get('studentId', [''])[0] or '').strip()
                 if not student_id:
                     self.send_json(400, {'error': 'Student ID is required.'})
