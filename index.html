@@ -463,11 +463,11 @@
             return { found, missing: requestedCodes.filter(code => !foundCodes.has(code)) };
         }
 
-        async function fetchExamSchedule(codes) {
+        async function fetchExamSchedule(codes, skipAims = false) {
             const res = await fetch(SIMS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                body: new URLSearchParams({ codes: codes.join(',') }),
+                body: new URLSearchParams({ codes: codes.join(','), skip_aims: skipAims ? 'true' : 'false' }),
             });
             const payload = await res.json();
             if (!res.ok) throw new Error(payload.error || `SIMS returned ${res.status}`);
@@ -739,7 +739,7 @@
                     const { codes, subjects } = await fetchMatricCourses(studentId);
                     if (!codes.length) throw new Error('No course codes returned from timetable.');
                     const detailsByCode = new Map(subjects.map(subject => [subject.code, subject]));
-                    const { found, missing } = await fetchExamSchedule(codes);
+                    const { found, missing } = await fetchExamSchedule(codes, true);
                     const enriched = found.map(exam => ({
                         ...exam,
                         subjectName: normalizeSubjectName(exam.subjectName || detailsByCode.get(exam.code)?.subjectName),

@@ -117,12 +117,29 @@ def post_form(url, payload, opener=None, referer=None):
         return response.read().decode('utf-8', errors='replace')
 
 
+shared_opener = None
+
+def get_shared_opener():
+    global shared_opener
+    if shared_opener is None:
+        shared_opener = make_opener()
+        shared_opener.addheaders = [('User-Agent', 'Mozilla/5.0 UiTM Finals Proxy')]
+        try:
+            with shared_opener.open(SIMS_FORM_URL, timeout=15) as response:
+                response.read()
+        except Exception:
+            pass
+    return shared_opener
+
 def fetch_sims_exam_html(codes):
-    opener = make_opener()
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 UiTM Finals Local Proxy')]
-    with opener.open(SIMS_FORM_URL, timeout=20) as response:
-        response.read()
-    return post_form(SIMS_URL, urlencode({'search_course': ','.join(codes)}), opener=opener, referer=SIMS_FORM_URL)
+    opener = get_shared_opener()
+    try:
+        return post_form(SIMS_URL, urlencode({'search_course': ','.join(codes)}), opener=opener, referer=SIMS_FORM_URL)
+    except Exception:
+        global shared_opener
+        shared_opener = None
+        opener = get_shared_opener()
+        return post_form(SIMS_URL, urlencode({'search_course': ','.join(codes)}), opener=opener, referer=SIMS_FORM_URL)
 
 
 def strip_html(value):
@@ -197,11 +214,15 @@ class Handler(SimpleHTTPRequestHandler):
 
             if path == '/api/exams' or path.endswith('/exams'):
                 codes = parse_codes(fields.get('codes', [''])[0] or fields.get('search_course', [''])[0])
+                skip_aims = (fields.get('skip_aims', [''])[0] or '').lower() == 'true'
                 if not codes:
                     self.send_json(400, {'error': 'No valid course codes provided.'})
                     return
                 html = fetch_sims_exam_html(codes)
-                self.send_json(200, enrich_exam_subjects(parse_exam_rows(html, codes)))
+                exams_result = parse_exam_rows(html, codes)
+                if not skip_aims:
+                    exams_result = enrich_exam_subjects(exams_result)
+                self.send_json(200, exams_result)
                 return
 
             if path == '/api/matric' or path.endswith('/matric'):
