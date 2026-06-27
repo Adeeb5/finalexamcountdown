@@ -260,6 +260,19 @@
         .dark-mode .message.error { color: #ffa299; background: #2f1719; border-color: #632629; }
         .dark-mode .message.success { color: #8ef7c7; background: #0c2b1e; border-color: #1a5c40; }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+        }
+        .exam-card.skeleton {
+            animation: pulse 1.5s infinite ease-in-out;
+            pointer-events: none;
+        }
+        .skeleton-line {
+            background-color: var(--soft);
+            border-radius: 4px;
+        }
+
         .exam-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
         .exam-card { min-height: 306px; padding: 24px; border-radius: 8px; background: var(--surface-card); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; text-align: left; }
         .exam-code { margin: 0 0 8px; font-family: var(--font-display); font-size: 34px; font-weight: 700; }
@@ -632,13 +645,50 @@
             );
         };
 
+        const SkeletonCard = () => (
+            <div className="exam-card skeleton">
+                <div>
+                    <div className="skeleton-line" style={{ width: '40%', height: '34px', marginBottom: '12px' }}></div>
+                    <div className="skeleton-line" style={{ width: '85%', height: '18px', marginBottom: '8px' }}></div>
+                    <div className="skeleton-line" style={{ width: '60%', height: '18px', marginBottom: '16px' }}></div>
+                    <div className="skeleton-line" style={{ width: '75%', height: '14px', marginBottom: '8px' }}></div>
+                    <div className="skeleton-line" style={{ width: '50%', height: '14px', marginBottom: '8px' }}></div>
+                </div>
+                <div>
+                    <div className="skeleton-line" style={{ width: '35%', height: '32px', borderRadius: '999px', marginTop: '22px' }}></div>
+                    <div className="card-actions" style={{ marginTop: '16px' }}>
+                        <div className="skeleton-line" style={{ width: '40%', height: '14px' }}></div>
+                        <div className="skeleton-line" style={{ width: '38px', height: '38px', borderRadius: '50%' }}></div>
+                    </div>
+                </div>
+            </div>
+        );
+
         const ExamCard = ({ exam, onRemove }) => {
             const status = getStatus(exam);
             return <article className="exam-card motion-item"><div><h3 className="exam-code">{exam.code}</h3><p className="subject-name">{exam.subjectName || 'Subject name available after matric import'}</p><p className="exam-meta">{formatDate(exam.dateStr)}<br />{exam.rawTime || formatTime(exam.dateStr)}<br />{exam.location}</p><p className={`lecturer-line ${exam.lecturer ? '' : 'missing-detail'}`}><Icon name="UserRound" size={16} /> <span>{exam.lecturer || 'Lecturer name available after matric import'}</span></p></div><div><span className={`status-pill ${status}`}><Icon name={status === "finished" ? "CheckCircle2" : status === "running" ? "AlarmClock" : "Clock3"} size={16} /> {statusCopy(exam)}</span><div className="card-actions"><p className="exam-meta">{exam.source}</p><button className="icon-btn" onClick={() => onRemove(exam.code)} aria-label={`Remove ${exam.code}`} title={`Remove ${exam.code}`}><Icon name="Trash2" size={18} /></button></div></div></article>;
         };
 
-        const Exams = ({ exams, onRemove }) => (
-            <section className="section soft" id="exams"><div className="wrap center"><h2>{exams.length ? 'Your final exam subjects.' : 'No subjects saved yet.'}</h2><p className="section-note">Only courses with final exam records are shown here. Remove anything you are not taking.</p>{exams.length ? <div className="exam-grid">{exams.map(exam => <ExamCard key={exam.code} exam={exam} onRemove={onRemove} />)}</div> : <div className="empty">Add a course code or import by matric number to create your personal final exam list.</div>}</div></section>
+        const Exams = ({ exams, onRemove, busy }) => (
+            <section className="section soft" id="exams">
+                <div className="wrap center">
+                    <h2>{busy ? 'Fetching subjects...' : exams.length ? 'Your final exam subjects.' : 'No subjects saved yet.'}</h2>
+                    <p className="section-note">Only courses with final exam records are shown here. Remove anything you are not taking.</p>
+                    {busy ? (
+                        <div className="exam-grid">
+                            <SkeletonCard />
+                            <SkeletonCard />
+                            <SkeletonCard />
+                        </div>
+                    ) : exams.length ? (
+                        <div className="exam-grid">
+                            {exams.map(exam => <ExamCard key={exam.code} exam={exam} onRemove={onRemove} />)}
+                        </div>
+                    ) : (
+                        <div className="empty">Add a course code or import by matric number to create your personal final exam list.</div>
+                    )}
+                </div>
+            </section>
         );
 
         const Details = () => <section className="section dark"><div className="wrap center"><h2>Stay ahead of your finals.</h2><p className="section-note">Track the remaining days, hours, and minutes for each exam. Plan your revision periods and walk into the exam hall with confidence.</p></div></section>;
@@ -777,7 +827,7 @@
                 setMessage({ type: 'success', text: `Removed ${code} from your saved list.` });
             };
 
-            return <><Nav darkMode={darkMode} onToggleTheme={() => setDarkMode(!darkMode)} /><Hero exams={exams} /><AddPanel onAdd={addCodes} onImport={importMatric} busy={busy} />{message ? <div className={`message ${message.type === 'error' ? 'error' : message.type === 'success' ? 'success' : ''}`}>{message.text}</div> : null}<Exams exams={exams} onRemove={removeExam} /><Details /><Schedule exams={exams} onClear={removeExam} /><footer><div className="wrap footer-grid"><div className="footer-brand"><img src="/assets/logo.png" alt="Finals+" className="footer-logo" /><div className="footer-credits">Developed by Adeeb</div><div>&copy; {new Date().getFullYear()} Finals+. All rights reserved.</div></div><div className="footer-links"><a href="#privacy" onClick={e => { e.preventDefault(); setModal({ isOpen: true, title: 'Privacy Policy', content: PRIVACY_CONTENT }); }}>Privacy Policy</a><a href="#terms" onClick={e => { e.preventDefault(); setModal({ isOpen: true, title: 'Terms of Service', content: TERMS_CONTENT }); }}>Terms of Service</a></div><div className="footer-disclaimer">Sources: official SIMS exam schedule.</div></div></footer><Modal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} title={modal.title} content={modal.content} /></>;
+            return <><Nav darkMode={darkMode} onToggleTheme={() => setDarkMode(!darkMode)} /><Hero exams={exams} /><AddPanel onAdd={addCodes} onImport={importMatric} busy={busy} />{message ? <div className={`message ${message.type === 'error' ? 'error' : message.type === 'success' ? 'success' : ''}`}>{message.text}</div> : null}<Exams exams={exams} onRemove={removeExam} busy={busy} /><Details /><Schedule exams={exams} onClear={removeExam} /><footer><div className="wrap footer-grid"><div className="footer-brand"><img src="/assets/logo.png" alt="Finals+" className="footer-logo" /><div className="footer-credits">Developed by Adeeb</div><div>&copy; {new Date().getFullYear()} Finals+. All rights reserved.</div></div><div className="footer-links"><a href="#privacy" onClick={e => { e.preventDefault(); setModal({ isOpen: true, title: 'Privacy Policy', content: PRIVACY_CONTENT }); }}>Privacy Policy</a><a href="#terms" onClick={e => { e.preventDefault(); setModal({ isOpen: true, title: 'Terms of Service', content: TERMS_CONTENT }); }}>Terms of Service</a></div><div className="footer-disclaimer">Sources: official SIMS exam schedule.</div></div></footer><Modal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false })} title={modal.title} content={modal.content} /></>;
         };
 
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);

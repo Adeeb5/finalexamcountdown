@@ -202,6 +202,21 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com; font-src 'self' data:; frame-ancestors 'none';")
         super().end_headers()
 
+    def do_GET(self):
+        import os
+        path = self.translate_path(self.path)
+        if not os.path.exists(path) and not self.path.startswith('/api/'):
+            self.send_response(404)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.end_headers()
+            try:
+                with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '404.html'), 'rb') as f:
+                    self.wfile.write(f.read())
+            except Exception:
+                self.wfile.write(b"404 Not Found")
+            return
+        super().do_GET()
+
     def send_json(self, status, payload):
         body = json.dumps(payload).encode('utf-8')
         self.send_response(status)
