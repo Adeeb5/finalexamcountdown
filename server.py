@@ -98,7 +98,7 @@ def parse_exam_rows(html, requested_codes):
 
 
 def make_opener():
-    context = ssl._create_unverified_context()
+    context = ssl.create_default_context()
     return build_opener(ProxyHandler({}), HTTPCookieProcessor(CookieJar()), HTTPSHandler(context=context))
 
 
@@ -194,6 +194,14 @@ def enrich_exam_subjects(result):
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('X-Frame-Options', 'SAMEORIGIN')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Referrer-Policy', 'strict-origin-when-cross-origin')
+        self.send_header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com; font-src 'self' data:; frame-ancestors 'none';")
+        super().end_headers()
+
     def send_json(self, status, payload):
         body = json.dumps(payload).encode('utf-8')
         self.send_response(status)
@@ -229,6 +237,9 @@ class Handler(SimpleHTTPRequestHandler):
                 student_id = (fields.get('studentId', [''])[0] or '').strip()
                 if not student_id:
                     self.send_json(400, {'error': 'Student ID is required.'})
+                    return
+                if not re.match(r'^[a-zA-Z0-9]+$', student_id):
+                    self.send_json(400, {'error': 'Invalid Student ID format. Only alphanumeric characters are allowed.'})
                     return
                 text = post_form(MATRIC_URL, urlencode({'studentId': student_id}))
                 if text.startswith('Alert_Error:'):
@@ -269,9 +280,11 @@ class Handler(SimpleHTTPRequestHandler):
 
             self.send_json(404, {'error': 'Unknown API route.'})
         except (HTTPError, URLError, TimeoutError) as exc:
-            self.send_json(502, {'error': f'External fetch failed: {exc}'})
+            print(f"Proxy fetch error: {exc}")
+            self.send_json(502, {'error': 'External request failed.'})
         except Exception as exc:
-            self.send_json(500, {'error': str(exc)})
+            print(f"Server exception: {exc}")
+            self.send_json(500, {'error': 'Internal server error.'})
 
 
 if __name__ == '__main__':
