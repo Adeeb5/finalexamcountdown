@@ -379,6 +379,34 @@ class Handler(SimpleHTTPRequestHandler):
                         system_instruction += f"- Code: {exam.get('code')}, Subject: {exam.get('subjectName') or 'N/A'}, Date: {exam.get('dateStr') or 'N/A'}, Location: {exam.get('location') or 'N/A'}\n"
                     system_instruction += "\n"
 
+                # Define a helper function to search Google/DuckDuckGo without keys
+                def perform_web_search(query):
+                    print(f"Executing web search for: {query}")
+                    try:
+                        search_url = 'https://html.duckduckgo.com/html/?' + urlencode({'q': query + " UiTM syllabus Scheme of Work"})
+                        req = Request(
+                            search_url,
+                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                        )
+                        opener = make_opener()
+                        with opener.open(req, timeout=8) as response:
+                            html_content = response.read().decode('utf-8', errors='replace')
+                            # Extract result rows
+                            results = []
+                            for match in re.finditer(r'<a class="result__snippet"[^>]*>(.*?)</a>', html_content, re.S):
+                                snippet = strip_html(match.group(1))
+                                if snippet:
+                                    results.append(snippet)
+                            if not results:
+                                # Fallback to extract any paragraph tags
+                                for match in re.finditer(r'<td class="result-snippet"[^>]*>(.*?)</td>', html_content, re.S):
+                                    snippet = strip_html(match.group(1))
+                                    if snippet:
+                                        results.append(snippet)
+                            return "\n".join(results[:5]) if results else "No search results found. Ask the student for their specific Scheme of Work topics."
+                    except Exception as e:
+                        return f"Search error: {str(e)}"
+
                 api_key = os.environ.get('GROQ_API_KEY')
                 if not api_key:
                     self.send_json(400, {'error': 'GROQ_API_KEY is not configured on the server. Please add it to your environment variables.'})
@@ -390,46 +418,97 @@ class Handler(SimpleHTTPRequestHandler):
                     groq_messages.append({"role": role, "content": h_msg.get("content", "")})
                 groq_messages.append({"role": "user", "content": user_msg})
 
-                req_data = {
-                    "model": "llama-3.3-70b-versatile",
-                    "messages": groq_messages,
-                    "max_tokens": 800
+                # Define the search tool schema
+                search_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": "google_search",
+                        "description": "Searches the web for UiTM syllabus topics, course details, or Scheme of Work outlines when a student asks about a course code or exam topics.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "The search query (e.g. 'CSC248 syllabus scheme of work' or 'ITT300 topics')."
+                                }
+                            },
+                            "required": ["query"]
+                        }
+                    }
                 }
 
                 url = 'https://api.groq.com/openai/v1/chat/completions'
-                req = Request(
-                    url,
-                    data=json.dumps(req_data).encode('utf-8'),
-                    headers={
-                        'Content-Type': 'application/json',
-                        'Authorization': f'Bearer {api_key}',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                
+                # Perform the agentic loop (up to 3 iterations for tool calls)
+                for _ in range(3):
+                    req_data = {
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": groq_messages,
+                        "tools": [search_tool],
+                        "tool_choice": "auto",
+                        "max_tokens": 800
                     }
-                )
-                try:
-                    opener = make_opener()
-                    with opener.open(req, timeout=9) as resp:
-                        resp_data = json.loads(resp.read().decode('utf-8'))
-                        reply = resp_data['choices'][0]['message']['content']
-                        self.send_json(200, {'reply': reply})
-                except Exception as e:
-                    import traceback
-                    traceback.print_exc()
-                    error_msg = str(e)
-                    if hasattr(e, 'read'):
-                        try:
-                            error_body = e.read().decode('utf-8', errors='replace')
+                    
+                    req = Request(
+                        url,
+                        data=json.dumps(req_data).encode('utf-8'),
+                        headers={
+                            'Content-Type': 'application/json',
+                            'Authorization': f'Bearer {api_key}',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    )
+                    
+                    try:
+                        opener = make_opener()
+                        with opener.open(req, timeout=12) as resp:
+                            resp_data = json.loads(resp.read().decode('utf-8'))
+                            choice = resp_data['choices'][0]
+                            message = choice['message']
+                            
+                            # If model requests tool calls, execute search and append to conversation history
+                            if message.get('tool_calls'):
+                                groq_messages.append(message)
+                                for tool_call in message['tool_calls']:
+                                    if tool_call['function']['name'] == 'google_search':
+                                        args = json.loads(tool_call['function']['arguments'])
+                                        search_res = perform_web_search(args.get('query', ''))
+                                        groq_messages.append({
+                                            "role": "tool",
+                                            "tool_call_id": tool_call['id'],
+                                            "name": "google_search",
+                                            "content": search_res
+                                        })
+                                # Continue loop to get final text response from the model
+                                continue
+                            
+                            # No tool calls: return the final answer
+                            reply = message['content']
+                            self.send_json(200, {'reply': reply})
+                            return
+                            
+                    except Exception as e:
+                        import traceback
+                        traceback.print_exc()
+                        error_msg = str(e)
+                        if hasattr(e, 'read'):
                             try:
-                                error_json = json.loads(error_body)
-                                if 'error' in error_json and 'message' in error_json['error']:
-                                    error_msg = f"{e} - {error_json['error']['message']}"
-                                else:
+                                error_body = e.read().decode('utf-8', errors='replace')
+                                try:
+                                    error_json = json.loads(error_body)
+                                    if 'error' in error_json and 'message' in error_json['error']:
+                                        error_msg = f"{e} - {error_json['error']['message']}"
+                                    else:
+                                        error_msg = f"{e} - {error_body}"
+                                except Exception:
                                     error_msg = f"{e} - {error_body}"
                             except Exception:
-                                error_msg = f"{e} - {error_body}"
-                        except Exception:
-                            pass
-                    self.send_json(500, {'error': f'AI request failed: {error_msg}'})
+                                pass
+                        self.send_json(500, {'error': f'AI request failed: {error_msg}'})
+                        return
+                
+                # Exceeded tool call limit without returning
+                self.send_json(500, {'error': 'AI search tool call loop limit exceeded.'})
                 return
 
             self.send_json(404, {'error': 'Unknown API route.'})
