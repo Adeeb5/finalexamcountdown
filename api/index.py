@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 7: switch to conversational student level identification and DBP Malay standard
+# Force rebuild 8: fix mobile responsive layout overlapping issue
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

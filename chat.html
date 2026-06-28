@@ -283,7 +283,7 @@
 
         /* Replaced general topbar toggle button on desktop since sidebar collapse is now a dock toggle */
         .menu-toggle {
-            display: none !important; /* Managed entirely inside sidebar dock */
+            display: none;
         }
 
         .theme-btn {
@@ -593,6 +593,14 @@
             }
             .menu-toggle {
                 display: flex !important; /* Mobile menu hamburger button */
+            }
+            
+            /* Chat input responsive adjustments */
+            .chat-input-container {
+                padding: 16px;
+            }
+            .chat-feed {
+                padding-bottom: 140px; /* Leave space for absolute-positioned input container */
             }
         }
     </style>
