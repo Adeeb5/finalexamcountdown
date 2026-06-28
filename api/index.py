@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 11: enforce exam syllabus topic specificity protocol
+# Force rebuild 12: fix python syntax formatting error in system prompt
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
