@@ -530,11 +530,11 @@ const ChatPanel = ({ exams }) => {
 
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: new URLSearchParams({
                     message: query,
-                    history: chatHistory,
-                    exams: exams
+                    history: JSON.stringify(chatHistory),
+                    exams: JSON.stringify(exams)
                 })
             });
 

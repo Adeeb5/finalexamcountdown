@@ -301,26 +301,18 @@ class Handler(SimpleHTTPRequestHandler):
                     self.send_json(400, {'error': 'GEMINI_API_KEY is not configured on the server. Please add it to your environment variables.'})
                     return
                 
-                post_body = self.read_post()
-                try:
-                    payload = json.loads(post_body)
-                except Exception:
-                    fields = parse_qs(post_body)
-                    payload = {
-                        'message': fields.get('message', [''])[0],
-                        'history': json.loads(fields.get('history', ['[]'])[0]),
-                        'exams': json.loads(fields.get('exams', ['[]'])[0])
-                    }
+                # Retrieve from already-parsed fields (avoids re-reading consumed stream)
+                user_msg = (fields.get('message', [''])[0] or fields.get('query', [''])[0] or '').strip()
+                history = json.loads(fields.get('history', ['[]'])[0])
+                loaded_exams = json.loads(fields.get('exams', ['[]'])[0])
                 
                 contents = []
-                history = payload.get('history', [])
                 for msg in history:
                     contents.append({
                         "role": "user" if msg.get("role") == "user" else "model",
                         "parts": [{"text": msg.get("content")}]
                     })
                 
-                user_msg = payload.get('message', '')
                 contents.append({
                     "role": "user",
                     "parts": [{"text": user_msg}]
