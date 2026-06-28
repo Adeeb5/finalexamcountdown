@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 31: enforce strict exam prep out-of-context guardrails
+# Force rebuild 32: increase max_tokens parameter to 1800
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

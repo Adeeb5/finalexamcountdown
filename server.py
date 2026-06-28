@@ -551,7 +551,7 @@ class Handler(SimpleHTTPRequestHandler):
                         "messages": groq_messages,
                         "tools": [search_tool, scrape_tool],
                         "tool_choice": "auto",
-                        "max_tokens": 800
+                        "max_tokens": 1800
                     }
                     
                     req = Request(
