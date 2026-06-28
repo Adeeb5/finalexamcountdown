@@ -77,7 +77,7 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
                     Finals+ AI
                 </span>
                 <button className="theme-btn menu-toggle" onClick=${() => setSidebarOpen(false)}>
-                    <${Icon} name="X" size=${20} /><//>
+                    <${Icon} name="X" size=${20} ><//>
                 </button>
             </div>
 
