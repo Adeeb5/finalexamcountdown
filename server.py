@@ -569,8 +569,8 @@ class Handler(SimpleHTTPRequestHandler):
 
                 url = 'https://api.groq.com/openai/v1/chat/completions'
                 
-                # Perform the agentic loop (up to 3 iterations for tool calls)
-                for _ in range(3):
+                # Perform the agentic loop (up to 6 iterations for tool calls)
+                for _ in range(6):
                     req_data = {
                         "model": "llama-3.3-70b-versatile",
                         "messages": groq_messages,

@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 23: filter tools list during agent turns
+# Force rebuild 24: increase agentic loop limit threshold
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
