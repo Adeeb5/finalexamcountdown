@@ -204,6 +204,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         import os
+        if self.path.split('?')[0] == '/chat':
+            self.path = '/chat.html'
         path = self.translate_path(self.path)
         if not os.path.exists(path) and not self.path.startswith('/api/'):
             self.send_response(404)
