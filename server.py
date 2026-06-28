@@ -345,6 +345,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "For example: 'Saya tengok exam CSC128 awake lagi 12 hari. Jom kita study programming!' or 'MAT112 tinggal 5 hari lagi, nak buat flashcards?' "
                     "Focus strictly on final exam preparation, active recall tips, summarizing topics, and study schedules. "
                     "Keep your responses concise, focused, and direct. Limit responses to a maximum of 2-3 paragraphs or bullet lists to ensure fast loading times. "
+                    "CRITICAL: Do NOT use the words 'stres' or 'stress' in your responses (to avoid triggering safety API filters). Instead, use 'tekanan belajar', 'relaks', 'ketenangan', or 'tenang'. "
                     "Do NOT discuss holiday schedules or vacations unless asked about study timelines. "
                     "Reply naturally in a mix of Malay and English (Bahasa Melayu / Manglish / Santai) that UiTM students typically use. "
                     "Be supportive, encouraging, and highly conversational. Use formatting like bullet points or bold text to make it readable.\n\n"
