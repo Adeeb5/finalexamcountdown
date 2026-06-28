@@ -318,9 +318,17 @@ class Handler(SimpleHTTPRequestHandler):
                 
                 contents = []
                 for msg in history:
+                    role = "user" if msg.get("role") == "user" else "model"
+                    text_val = msg.get("content", "").strip()
+                    if not text_val:
+                        continue
+                    # Gemini requires chat history to start with a 'user' message.
+                    # We skip any bot welcome messages at the very beginning.
+                    if not contents and role == "model":
+                        continue
                     contents.append({
-                        "role": "user" if msg.get("role") == "user" else "model",
-                        "parts": [{"text": msg.get("content")}]
+                        "role": role,
+                        "parts": [{"text": text_val}]
                     })
                 
                 contents.append({
