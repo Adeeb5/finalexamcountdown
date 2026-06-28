@@ -164,7 +164,7 @@ const ChatApp = () => {
         setInput(e.target.value);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight - 10}px`;
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
         }
     };
 
@@ -222,9 +222,6 @@ const ChatApp = () => {
 
     const renderInputBox = () => html`
         <div className="chat-input-wrapper">
-            <div className="chat-input-left" title="Attachment (disabled)">
-                <${Icon} name="Plus" size=${18} ><//>
-            </div>
             <textarea 
                 ref=${textareaRef}
                 value=${input}
@@ -239,14 +236,9 @@ const ChatApp = () => {
                 rows="1"
                 disabled=${loading}
             />
-            <div className="chat-input-actions">
-                <button className="mic-btn" type="button" title="Voice input (disabled)">
-                    <${Icon} name="Mic" size=${16} ><//>
-                </button>
-                <button className="send-btn" onClick=${() => handleSend()} disabled=${loading || !input.trim()}>
-                    <${Icon} name="ArrowUp" size=${16} ><//>
-                </button>
-            </div>
+            <button className="send-btn" onClick=${() => handleSend()} disabled=${loading || !input.trim()}>
+                <${Icon} name="ArrowUp" size=${16} ><//>
+            </button>
         </div>
     `;
 
