@@ -364,9 +364,6 @@ class Handler(SimpleHTTPRequestHandler):
                     "contents": contents,
                     "systemInstruction": {
                         "parts": [{"text": system_instruction}]
-                    },
-                    "generationConfig": {
-                        "maxOutputTokens": 450
                     }
                 }
                 
