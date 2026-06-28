@@ -256,6 +256,7 @@ const Nav = ({ darkMode, onToggleTheme }) => html`
                     <a href="#add"><${Icon} name="Plus" size=${14} ><//> Add</a>
                     <a href="#exams"><${Icon} name="BookOpen" size=${14} ><//> Exams</a>
                     <a href="#schedule"><${Icon} name="CalendarDays" size=${14} ><//> Schedule</a>
+                    <a href="#chat"><${Icon} name="MessageSquare" size=${14} ><//> Tanya AI</a>
                     <button onClick=${onToggleTheme} style=${{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: '4px' }} aria-label="Toggle dark mode" title="Toggle dark mode">
                         <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${15} ><//>
                     </button>
@@ -464,6 +465,146 @@ const Schedule = ({ exams, onClear }) => {
     `;
 };
 
+function renderMarkdown(text) {
+    let htmlStr = String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    
+    htmlStr = htmlStr.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    const lines = htmlStr.split('\n');
+    let inList = false;
+    const processedLines = lines.map(line => {
+        const listMatch = line.match(/^[\s]*[-*][\s]+(.*)/);
+        if (listMatch) {
+            let item = listMatch[1];
+            if (!inList) {
+                inList = true;
+                return '<ul><li>' + item + '</li>';
+            }
+            return '<li>' + item + '</li>';
+        } else {
+            if (inList) {
+                inList = false;
+                return '</ul>' + line;
+            }
+            return line;
+        }
+    });
+    if (inList) {
+        processedLines.push('</ul>');
+    }
+    
+    return processedLines.join('<br />');
+}
+
+const ChatPanel = ({ exams }) => {
+    const [messages, setMessages] = useState([
+        { role: 'model', content: 'Hi! Saya Finals+ AI. Tanyalah apa-apa tentang cuti UiTM, tarikh exam anda, atau tips study! 📚✨' }
+    ]);
+    const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(false);
+    const historyRef = React.useRef(null);
+
+    useEffect(() => {
+        if (historyRef.current) {
+            historyRef.current.scrollTop = historyRef.current.scrollHeight;
+        }
+    }, [messages, loading]);
+
+    const handleSend = async (text) => {
+        const query = (text || input).trim();
+        if (!query) return;
+        if (!text) setInput('');
+
+        const newMessages = [...messages, { role: 'user', content: query }];
+        setMessages(newMessages);
+        setLoading(true);
+
+        try {
+            const chatHistory = newMessages.slice(0, -1).map(msg => ({
+                role: msg.role,
+                content: msg.content
+            })).slice(-6);
+
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: query,
+                    history: chatHistory,
+                    exams: exams
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || `Server error: ${res.status}`);
+            }
+
+            setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
+        } catch (error) {
+            setMessages(prev => [...prev, { role: 'system-error', content: `Error: ${error.message}. Cuba lagi kejap lagi!` }]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const suggestions = [
+        "Bila cuti pertengahan semester?",
+        "Bila cuti semester bermula?",
+        "Berapa hari lagi exam mula?",
+        "Bagi tips study last minute"
+    ];
+
+    return html`
+        <section className="section soft" id="chat">
+            <div className="wrap center">
+                <h2>Tanya Finals+ AI.</h2>
+                <p className="section-note">Dapatkan maklumat akademik, cuti UiTM, countdown exam, dan tips study daripada chatbot AI kami.</p>
+                
+                <div className="chat-container">
+                    <div className="chat-history" ref=${historyRef}>
+                        ${messages.map((msg, index) => html`
+                            <div key=${index} className=${`chat-message ${msg.role}`} dangerouslySetInnerHTML=${{ __html: renderMarkdown(msg.content) }} />
+                        `)}
+                        ${loading ? html`
+                            <div className="chat-message model">
+                                <div className="typing-indicator">
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                    <div className="typing-dot"></div>
+                                </div>
+                            </div>
+                        ` : null}
+                    </div>
+                    
+                    <div className="chat-input-area">
+                        <div className="chat-suggestions">
+                            ${suggestions.map(s => html`
+                                <button key=${s} className="suggestion-chip" onClick=${() => handleSend(s)} disabled=${loading}>${s}</button>
+                            `)}
+                        </div>
+                        <div className="input-row">
+                            <input 
+                                value=${input} 
+                                onChange=${e => setInput(e.target.value)} 
+                                onKeyDown=${e => e.key === 'Enter' && !loading && handleSend()}
+                                placeholder="Tanya tentang cuti, jadual exam, tips study..." 
+                                disabled=${loading}
+                            />
+                            <button className="pill primary" onClick=${() => handleSend()} disabled=${loading || !input.trim()}>
+                                <${Icon} name="Send" size=${18} ><//> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    `;
+};
+
 const App = () => {
     useClock();
     const [exams, setExams] = useState(loadStored);
@@ -601,6 +742,7 @@ const App = () => {
             ${message ? html`<div className=${`message ${message.type === 'error' ? 'error' : message.type === 'success' ? 'success' : ''}`}>${message.text}</div>` : null}
             <${Exams} exams=${exams} onRemove=${removeExam} busy=${busy} ><//>
             <${Details} ><//>
+            <${ChatPanel} exams=${exams} ><//>
             <${Schedule} exams=${exams} onClear=${removeExam} ><//>
             <footer>
                 <div className="wrap footer-grid">

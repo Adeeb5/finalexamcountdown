@@ -293,6 +293,88 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(200, {'codes': codes, 'subjects': subjects})
                 return
 
+            if path == '/api/chat' or path.endswith('/chat'):
+                import os
+                from urllib.request import urlopen
+                api_key = os.environ.get('GEMINI_API_KEY')
+                if not api_key:
+                    self.send_json(400, {'error': 'GEMINI_API_KEY is not configured on the server. Please add it to your environment variables.'})
+                    return
+                
+                post_body = self.read_post()
+                try:
+                    payload = json.loads(post_body)
+                except Exception:
+                    fields = parse_qs(post_body)
+                    payload = {
+                        'message': fields.get('message', [''])[0],
+                        'history': json.loads(fields.get('history', ['[]'])[0]),
+                        'exams': json.loads(fields.get('exams', ['[]'])[0])
+                    }
+                
+                contents = []
+                history = payload.get('history', [])
+                for msg in history:
+                    contents.append({
+                        "role": "user" if msg.get("role") == "user" else "model",
+                        "parts": [{"text": msg.get("content")}]
+                    })
+                
+                user_msg = payload.get('message', '')
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": user_msg}]
+                })
+                
+                system_instruction = (
+                    "You are 'Finals+ AI', a helpful and friendly academic assistant for UiTM students. "
+                    "You help students with their exams, study tips, and academic schedules. "
+                    "Reply naturally in a mix of Malay and English (Bahasa Melayu / Manglish / Santai) that UiTM students typically use. "
+                    "Be supportive, encouraging, and friendly. Use formatting like bullet points or bold text to make it easy to read.\n\n"
+                    "Current Local Time/Date: Sunday, June 28, 2026.\n\n"
+                    "UiTM Academic Calendar Session II 2025/2026 (Current Semester):\n"
+                    "- Lectures: 30 March 2026 to 24 May 2026 (8 weeks)\n"
+                    "- Mid-Semester/Special Break: 25 May 2026 to 2 June 2026 (1 week)\n"
+                    "- Lectures Continued: 3 June 2026 to 12 July 2026 (6 weeks)\n"
+                    "- Revision Week: 13 July 2026 to 19 July 2026 (1 week)\n"
+                    "- Final Examinations/Assessments: 20 July 2026 to 9 August 2026 (3 weeks)\n"
+                    "- Semester Break: 10 August 2026 to 4 October 2026 (8 weeks)\n\n"
+                )
+                
+                loaded_exams = payload.get('exams', [])
+                if loaded_exams:
+                    system_instruction += "The student currently has these final exams saved in their countdown list:\n"
+                    for exam in loaded_exams:
+                        system_instruction += f"- Code: {exam.get('code')}, Subject: {exam.get('subjectName') or 'N/A'}, Date: {exam.get('dateStr') or 'N/A'}, Location: {exam.get('location') or 'N/A'}\n"
+                    system_instruction += "\n"
+                
+                req_data = {
+                    "contents": contents,
+                    "systemInstruction": {
+                        "parts": [{"text": system_instruction}]
+                    }
+                }
+                
+                req_body = json.dumps(req_data).encode('utf-8')
+                req_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                
+                req = Request(
+                    req_url,
+                    data=req_body,
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                context = ssl.create_default_context()
+                with urlopen(req, context=context, timeout=20) as resp:
+                    resp_data = json.loads(resp.read().decode('utf-8'))
+                    try:
+                        reply = resp_data['candidates'][0]['content']['parts'][0]['text']
+                        self.send_json(200, {'reply': reply})
+                    except Exception as e:
+                        print("Error parsing Gemini response:", resp_data, e)
+                        self.send_json(500, {'error': 'Failed to parse AI response.'})
+                return
+
             self.send_json(404, {'error': 'Unknown API route.'})
         except (HTTPError, URLError, TimeoutError) as exc:
             print(f"Proxy fetch error: {exc}")
