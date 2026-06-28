@@ -599,10 +599,16 @@ class Handler(SimpleHTTPRequestHandler):
                             # If model requests tool calls, execute search and append to conversation history
                             if message.get('tool_calls'):
                                 # Construct clean assistant tool call message structure
+                                # Filter out tool calls that are not in request.tools
+                                valid_calls = []
+                                for tc in message['tool_calls']:
+                                    if tc.get('function', {}).get('name') in ['google_search', 'search_exam_papers']:
+                                        valid_calls.append(tc)
+                                
                                 assistant_msg = {
                                     "role": "assistant",
                                     "content": message.get('content') or None,
-                                    "tool_calls": message['tool_calls']
+                                    "tool_calls": valid_calls
                                 }
                                 groq_messages.append(assistant_msg)
 
