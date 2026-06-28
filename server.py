@@ -342,7 +342,6 @@ class Handler(SimpleHTTPRequestHandler):
                     "- Final Examinations/Assessments: 20 July 2026 to 9 August 2026\n\n"
                 )
                 
-                loaded_exams = payload.get('exams', [])
                 if loaded_exams:
                     system_instruction += "The student currently has these final exams saved in their countdown list:\n"
                     for exam in loaded_exams:
