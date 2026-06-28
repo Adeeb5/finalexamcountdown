@@ -6,6 +6,7 @@ import html as html_utils
 import json
 import re
 import ssl
+import os
 from http.cookiejar import CookieJar
 
 SIMS_FORM_URL = 'https://simsweb.uitm.edu.my/SPORTAL_APP/exam_schedule/index.htm'

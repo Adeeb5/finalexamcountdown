@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 2: remove duplicate Gemini verification checks
+# Force rebuild 3: fix missing global os import NameError
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
