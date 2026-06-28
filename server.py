@@ -364,7 +364,7 @@ class Handler(SimpleHTTPRequestHandler):
                 }
                 
                 req_body = json.dumps(req_data).encode('utf-8')
-                req_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                req_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
                 req = Request(
                     req_url,
