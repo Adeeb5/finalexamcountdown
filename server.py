@@ -362,6 +362,9 @@ class Handler(SimpleHTTPRequestHandler):
                     "contents": contents,
                     "systemInstruction": {
                         "parts": [{"text": system_instruction}]
+                    },
+                    "generationConfig": {
+                        "maxOutputTokens": 450
                     }
                 }
                 
@@ -376,7 +379,7 @@ class Handler(SimpleHTTPRequestHandler):
                 
                 try:
                     opener = make_opener()
-                    with opener.open(req, timeout=8) as resp:
+                    with opener.open(req, timeout=9) as resp:
                         resp_data = json.loads(resp.read().decode('utf-8'))
                         reply = resp_data['candidates'][0]['content']['parts'][0]['text']
                         self.send_json(200, {'reply': reply})
