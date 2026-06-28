@@ -298,7 +298,6 @@ class Handler(SimpleHTTPRequestHandler):
 
             elif path == '/api/chat' or path.endswith('/chat'):
                 user_msg = (fields.get('message', [''])[0] or fields.get('query', [''])[0] or '').strip()
-                student_level = (fields.get('level', ['degree'])[0] or 'degree').strip().lower()
                 
                 try:
                     history_str = fields.get('history', ['[]'])[0]
@@ -312,54 +311,51 @@ class Handler(SimpleHTTPRequestHandler):
                 except Exception:
                     loaded_exams = []
 
-                # Academic calendar based on student level
-                if student_level == 'diploma':
-                    calendar_info = (
-                        "UiTM Academic Calendar Session 2025/2026 Semester II (Diploma/Pre-Diploma):\n"
-                        "- Lectures: 3 June – 12 July 2025\n"
-                        "- Revision Week: 13 July – 19 July 2025\n"
-                        "- Final Examinations/Assessments: 20 July – 9 August 2025\n"
-                    )
-                    level_label = "Diploma/Pre-Diploma"
-                    complexity_note = (
-                        "This student is at the DIPLOMA level. Keep explanations simple, practical, and step-by-step. "
-                        "Use more examples and analogies. Focus on foundational concepts. "
-                        "Avoid overly academic or theoretical language."
-                    )
-                else:
-                    calendar_info = (
-                        "UiTM Academic Calendar Session 2025/2026 Semester II (Degree):\n"
-                        "- Lectures: 3 June – 12 July 2025\n"
-                        "- Revision Week: 13 July – 19 July 2025\n"
-                        "- Final Examinations/Assessments: 20 July – 9 August 2025\n"
-                    )
-                    level_label = "Degree (Sarjana Muda)"
-                    complexity_note = (
-                        "This student is at the DEGREE level. Provide in-depth, analytical explanations. "
-                        "Include critical thinking prompts, case studies, and deeper conceptual discussions. "
-                        "Challenge the student with higher-order thinking questions."
-                    )
+                # Include calendar parameters for all levels to reference dynamically
+                calendar_info = (
+                    "UiTM Academic Calendars Session 2025/2026 Semester II:\n"
+                    "1. Degree (Sarjana Muda) & Postgraduate:\n"
+                    "   - Lectures: 3 June – 12 July 2025\n"
+                    "   - Revision Week (Minggu Ulang Kaji): 13 July – 19 July 2025\n"
+                    "   - Final Examinations (Peperiksaan Akhir): 20 July – 9 August 2025\n"
+                    "2. Diploma / Pre-Diploma:\n"
+                    "   - Lectures: 3 June – 12 July 2025\n"
+                    "   - Revision Week (Minggu Ulang Kaji): 13 July – 19 July 2025\n"
+                    "   - Final Examinations (Peperiksaan Akhir): 20 July – 9 August 2025\n"
+                    "3. Asasi (Foundation): Schedules may differ slightly depending on specific intake cohorts. Always ask to clarify if needed.\n"
+                )
 
                 from datetime import datetime
                 current_date = datetime.now().strftime('%A, %d %B %Y')
 
                 system_instruction = (
-                    f"You are 'Finals+ AI', a highly personalized academic tutor and study buddy for UiTM {level_label} students. "
-                    f"{complexity_note}\n\n"
+                    "You are 'Finals+ AI', a highly personalized academic tutor and study buddy for UiTM students (Asasi, Diploma, Degree, etc.).\n\n"
+                    "PERSONALIZATION & IDENTIFICATION PROTOCOL:\n"
+                    "1. You MUST dynamically identify the student's level of study (Asasi, Diploma, Degree, or others) through active conversation. If you do not know their level yet, ask them politely in your opening or during the flow of conversation so you can offer the most accurate assistance.\n"
+                    "2. Dynamically adjust your explanation depth, complexity, and advice based on their level. For example:\n"
+                    "   - Diploma/Asasi: Keep explanation structure simple, practical, step-by-step, with abundant real-world analogies.\n"
+                    "   - Degree: Provide more analytical, conceptual, and detailed explanations, including critical thinking prompts and deeper discussions.\n\n"
+                    "LANGUAGE PROTOCOL (MALAY & ENGLISH MIX):\n"
+                    "- You MUST communicate using proper Standard Malaysian Malay (Bahasa Melayu standard) or casual Malay-English mix (Manglish / Santai) that is natural for Malaysian UiTM students.\n"
+                    "- CRITICAL: Avoid Indonesian language (Bahasa Indonesia) terminology, spelling, and grammar. Refer to Kamus Dewan Bahasa dan Pustaka (DBP) standard. Examples of what to use:\n"
+                    "  - Use 'peperiksaan' or 'exam' (NOT 'ujian')\n"
+                    "  - Use 'ulang kaji' or 'study' (NOT 'belajar' in the context of revision/reviewing)\n"
+                    "  - Use 'soalan' (NOT 'pertanyaan')\n"
+                    "  - Use 'ralat' (NOT 'kesalahan' for errors)\n"
+                    "  - Use 'sebentar' or 'kejap' (NOT 'sebentar lagi' in Indonesian style)\n"
+                    "  - Use 'butiran' or 'maklumat' (NOT 'informasi')\n"
+                    "  - Use 'rujukan' (NOT 'referensi')\n\n"
                     "CORE BEHAVIOR:\n"
-                    "1. You MUST proactively reference the student's saved final exams (if any). Calculate how many days are left until their exams and mention it to motivate them.\n"
-                    "2. When the student mentions a UiTM COURSE CODE (e.g., ITT300, CSC128, MAT112, ENT300, CTU551, etc.), you MUST:\n"
-                    "   - Identify the course name from your knowledge (e.g., ITT300 = Introduction to Data Communication and Networking)\n"
-                    "   - Reference the ACTUAL SYLLABUS TOPICS for that UiTM course. For example, ITT300 covers: Data Communications basics, OSI Model, TCP/IP Model, Data & Signals, Transmission Media, LAN Technologies, IP Addressing, Network Protocols.\n"
-                    "   - Provide topic-specific study advice, summaries, revision tips, and mini-quizzes based on the real syllabus content.\n"
-                    "   - If you are unsure about a specific course's syllabus, tell the student honestly and ask them to share their scheme of work topics so you can help better.\n"
+                    "1. Proactively check and reference the student's saved final exams list (if any). Calculate how many days are left until their exams and mention it to motivate them.\n"
+                    "2. When a student mentions a UiTM course code (e.g., ITT300, CSC128, MAT112, ENT300, etc.), you MUST:\n"
+                    "   - Identify the course name (e.g., ITT300 = Introduction to Data Communication and Networking).\n"
+                    "   - Detail the ACTUAL SYLLABUS TOPICS for that UiTM course. (e.g., for ITT300: Data Communications basics, OSI Model, TCP/IP Model, Data & Signals, Transmission Media, LAN Technologies, IP Addressing, Network Protocols).\n"
+                    "   - Offer topic-specific study advice, summary points, active recall techniques, and mini-quizzes based on the syllabus content.\n"
+                    "   - Ask the student to share their scheme of work (SOW) topics if you need to double-check specific campus differences.\n"
                     "3. Focus strictly on final exam preparation, active recall tips, topic summaries, and study schedules.\n"
-                    "4. Keep responses concise and direct. Maximum 2-3 paragraphs or bullet lists.\n"
-                    "5. Reply naturally in a mix of Malay and English (Bahasa Melayu / Manglish / Santai) that UiTM students use.\n"
-                    "6. Be supportive, encouraging, and highly conversational. Use formatting like bullet points or bold text.\n\n"
+                    "4. Keep responses concise and direct. Maximum 2-3 paragraphs or bullet lists.\n\n"
                     f"Current Date: {current_date}\n\n"
                     f"{calendar_info}\n"
-                    f"Student Level: {level_label}\n\n"
                 )
                 
                 if loaded_exams:

@@ -3,7 +3,6 @@ const html = htm.bind(React.createElement);
 
 const STORAGE_KEY = 'uitm-final-exams-v1';
 const CHAT_STORAGE_KEY = 'uitm-chat-session-v1';
-const LEVEL_STORAGE_KEY = 'uitm-student-level';
 
 function loadStoredExams() {
     try {
@@ -72,57 +71,55 @@ function renderMarkdown(text) {
         processedLines.push('</ul>');
     }
     
-    return processedLines.join('<br />');
+    return processedLines.join('\n').replace(/\n/g, '<br/>');
 }
 
 const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, sidebarCollapsed, darkMode, setDarkMode, onToggleSidebar }) => {
     return html`
         <aside className=${`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
-                <span className="sidebar-brand">
-                    <img src="/assets/logo-icon.png" alt="F+" />
-                    Finals+ AI
-                </span>
-                <button className="sidebar-toggle-btn" onClick=${onToggleSidebar} title=${sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-                    <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "PanelLeftClose"} size=${18} ><//>
+                <div className="logo-section">
+                    <img src="/assets/logo-icon.png" alt="Finals+" className="logo-icon" />
+                    <span className="logo-text">Finals+</span>
+                </div>
+                <button className="collapse-btn" onClick=${onToggleSidebar} title="Collapse sidebar">
+                    <${Icon} name="ChevronsLeft" size=${18} ><//>
                 </button>
             </div>
 
-            <button className="new-chat-btn" onClick=${onNewChat} title="New Chat">
-                <span className="sidebar-text">New Chat</span>
-                <${Icon} name="SquarePen" size=${16} ><//>
+            <button className="new-chat-btn" onClick=${onNewChat}>
+                <${Icon} name="Plus" size=${16} ><//>
+                <span>Sembang Baru</span>
             </button>
 
-            <div className="sidebar-content">
-                <div className="sidebar-section-title">My Countdown Timers</div>
-                <div className="sidebar-exam-list">
-                    ${exams.length ? exams.map(exam => html`
-                        <div className="sidebar-exam-card" key=${exam.code}>
-                            <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <strong className="sidebar-exam-code">${exam.code}</strong>
-                                <span style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>
-                                    ${calculateDaysLeft(exam.dateStr)}
-                                </span>
+            <div className="exams-section">
+                <div className="section-title">Countdown Exam Anda</div>
+                <div className="exams-list">
+                    ${exams.length === 0 ? html`
+                        <div className="empty-state">
+                            Tiada exam disimpan.
+                            <a href="/" className="setup-link">Tambah exam sekarang →</a>
+                        </div>
+                    ` : exams.map((exam, index) => html`
+                        <div key=${index} className="sidebar-exam-item">
+                            <div className="exam-main">
+                                <span className="exam-code">${exam.code}</span>
+                                <span className="exam-days">${calculateDaysLeft(exam.dateStr)}</span>
                             </div>
-                            <div className="sidebar-exam-date">${formatDate(exam.dateStr)} - ${exam.location}</div>
+                            <div className="exam-sub">
+                                <span>${formatDate(exam.dateStr)}</span>
+                                <span className="exam-loc">${exam.location || 'No Location'}</span>
+                            </div>
                         </div>
-                    `) : html`
-                        <div style=${{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', padding: '12px', border: '1px dashed var(--line)', borderRadius: '6px' }}>
-                            No exams loaded. Import timetable on home page to show timers here.
-                        </div>
-                    `}
+                    `)}
                 </div>
             </div>
 
             <div className="sidebar-footer">
-                <div className="sidebar-link" onClick=${() => setDarkMode(!darkMode)} title=${darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+                <button className="theme-toggle-btn" onClick=${() => setDarkMode(!darkMode)}>
                     <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${16} ><//>
-                    <span className="sidebar-text">${darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-                </div>
-                <a className="sidebar-link" href="/" title="Back to Home">
-                    <${Icon} name="Home" size=${16} ><//>
-                    <span className="sidebar-text">Back to Home</span>
-                </a>
+                    <span>${darkMode ? 'Mod Terang' : 'Mod Gelap'}</span>
+                </button>
             </div>
         </aside>
     `;
@@ -136,17 +133,6 @@ const ChatApp = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-    const [studentLevel, setStudentLevel] = useState(() => localStorage.getItem(LEVEL_STORAGE_KEY) || null);
-
-    const selectLevel = (level) => {
-        localStorage.setItem(LEVEL_STORAGE_KEY, level);
-        setStudentLevel(level);
-    };
-
-    const changeLevel = () => {
-        localStorage.removeItem(LEVEL_STORAGE_KEY);
-        setStudentLevel(null);
-    };
 
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -204,8 +190,7 @@ const ChatApp = () => {
                 body: new URLSearchParams({
                     message: query,
                     history: JSON.stringify(chatHistory),
-                    exams: JSON.stringify(exams),
-                    level: studentLevel || 'degree'
+                    exams: JSON.stringify(exams)
                 })
             });
 
@@ -216,7 +201,7 @@ const ChatApp = () => {
 
             setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'system-error', content: `Error: ${error.message}. Cuba lagi kejap lagi!` }]);
+            setMessages(prev => [...prev, { role: 'system-error', content: `Ralat: ${error.message}. Cuba lagi sebentar.` }]);
         } finally {
             setLoading(false);
         }
@@ -227,10 +212,10 @@ const ChatApp = () => {
     };
 
     const suggestions = [
-        { title: "Tips study", icon: "BookOpen", query: "Bagi tips study last minute untuk subjek yang susah" },
-        { title: "Rancang jadual", icon: "Calendar", query: "Macam mana nak rancang jadual study mengikut tarikh exam saya?" },
-        { title: "Atasi stres", icon: "Smile", query: "Cadangkan cara atasi stres exam" },
-        { title: "Buat kuiz", icon: "HelpCircle", query: "Buatkan kuiz ringkas untuk bantu saya hafal subjek saya" }
+        { title: "Tips study", icon: "BookOpen", query: "Beri tips belajar saat-saat akhir untuk subjek yang susah" },
+        { title: "Rancang jadual", icon: "Calendar", query: "Bagaimana cara merancang jadual belajar mengikut tarikh peperiksaan saya?" },
+        { title: "Atasi stres", icon: "Smile", query: "Cadangkan cara mengatasi stres peperiksaan" },
+        { title: "Buat kuiz", icon: "HelpCircle", query: "Buatkan kuiz ringkas untuk membantu saya menghafal subjek saya" }
     ];
 
     const renderInputBox = () => html`
@@ -245,7 +230,7 @@ const ChatApp = () => {
                         handleSend();
                     }
                 }}
-                placeholder="Ask anything..." 
+                placeholder="Tanya apa-apa..." 
                 rows="1"
                 disabled=${loading}
             />
@@ -262,33 +247,6 @@ const ChatApp = () => {
             setSidebarCollapsed(!sidebarCollapsed);
         }
     };
-
-    // Level picker overlay
-    if (!studentLevel) {
-        return html`
-            <div className="level-picker-overlay">
-                <div className="level-picker-card">
-                    <div className="level-picker-logo">
-                        <img src="/assets/logo-icon.png" alt="Finals+" style=${{ width: 48, height: 48 }} />
-                    </div>
-                    <h1 className="level-picker-title">Selamat datang ke Finals+ AI</h1>
-                    <p className="level-picker-subtitle">Pilih level pengajian awak supaya AI boleh bantu dengan lebih tepat</p>
-                    <div className="level-picker-buttons">
-                        <button className="level-btn level-btn-diploma" onClick=${() => selectLevel('diploma')}>
-                            <span className="level-btn-emoji">🎓</span>
-                            <span className="level-btn-label">Diploma</span>
-                            <span className="level-btn-desc">Pre-Diploma / Diploma</span>
-                        </button>
-                        <button className="level-btn level-btn-degree" onClick=${() => selectLevel('degree')}>
-                            <span className="level-btn-emoji">📚</span>
-                            <span className="level-btn-label">Degree</span>
-                            <span className="level-btn-desc">Sarjana Muda / Bachelor</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
 
     return html`
         <div className=${`chat-app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
@@ -309,9 +267,6 @@ const ChatApp = () => {
                         <button className="menu-toggle" onClick=${() => setSidebarOpen(!sidebarOpen)} title="Toggle sidebar">
                             <${Icon} name="Menu" size=${20} ><//>
                         </button>
-                        <button className="level-badge" onClick=${changeLevel} title="Tukar level pengajian">
-                            ${studentLevel === 'diploma' ? '🎓' : '📚'} ${studentLevel === 'diploma' ? 'Diploma' : 'Degree'}
-                        </button>
                     </div>
                     <button className="theme-btn" onClick=${() => setDarkMode(!darkMode)}>
                         <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${20} ><//>
@@ -321,7 +276,7 @@ const ChatApp = () => {
                 <div className="chat-feed-wrapper">
                     ${messages.length === 0 ? html`
                         <div className="welcome-container">
-                            <h1 className="welcome-title">What can I help with?</h1>
+                            <h1 className="welcome-title">Apa yang boleh saya bantu?</h1>
                         </div>
                     ` : html`
                         <div className="chat-feed">
@@ -368,7 +323,7 @@ const ChatApp = () => {
                         </div>
                     ` : html`
                         <div className="chat-disclaimer">
-                            Finals+ AI boleh membuat kesilapan. Sila semak jadual dan venue exam rasmi anda.
+                            Finals+ AI boleh membuat kesilapan. Sila semak jadual dan tempat peperiksaan rasmi anda.
                         </div>
                     `}
                 </div>
