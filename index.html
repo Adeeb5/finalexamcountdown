@@ -377,16 +377,9 @@
             gap: 8px;
             margin-bottom: 12px;
             justify-content: flex-start;
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-        .chat-suggestions::-webkit-scrollbar {
-            display: none;
+            flex-wrap: wrap; /* Wrap on desktop to prevent horizontal clipping */
         }
         .suggestion-chip {
-            flex: 0 0 auto;
             font-size: 13px;
             padding: 6px 14px;
             border-radius: 999px;
@@ -401,6 +394,21 @@
             background: var(--indigo);
             color: #ffffff;
             border-color: var(--indigo);
+        }
+        @media (max-width: 600px) {
+            .chat-suggestions {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .chat-suggestions::-webkit-scrollbar {
+                display: none;
+            }
+            .suggestion-chip {
+                flex: 0 0 auto;
+            }
         }
         .chat-input-area .input-row {
             flex-direction: row !important;
