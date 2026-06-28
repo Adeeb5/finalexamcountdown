@@ -220,8 +220,8 @@ const ChatApp = () => {
                 sidebarOpen=${sidebarOpen} 
                 setSidebarOpen=${setSidebarOpen} 
                 darkMode=${darkMode} 
-                setDarkMode=${setDarkMode} 
-            />
+                setDarkMode=${setDarkMode}
+            ><//>
 
             <main className="chat-main">
                 <div className="chat-topbar">
