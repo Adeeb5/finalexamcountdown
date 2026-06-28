@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 10: restore original UI layout and set English defaults
+# Force rebuild 11: enforce exam syllabus topic specificity protocol
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
