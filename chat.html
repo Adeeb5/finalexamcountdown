@@ -105,7 +105,7 @@
             padding: 14px 0;
         }
 
-        .logo-section {
+        .sidebar-brand {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -114,19 +114,11 @@
             font-family: var(--font-display);
         }
 
-        .logo-icon {
+        .sidebar-brand img {
             height: 22px;
         }
 
-        .logo-text {
-            color: var(--ink);
-        }
-
-        .sidebar.collapsed .logo-section {
-            display: none !important;
-        }
-
-        .collapse-btn {
+        .sidebar-toggle-btn {
             background: none;
             border: none;
             cursor: pointer;
@@ -138,13 +130,9 @@
             justify-content: center;
             transition: background 150ms ease, color 150ms ease;
         }
-        .collapse-btn:hover {
+        .sidebar-toggle-btn:hover {
             background: var(--soft);
             color: var(--ink);
-        }
-
-        .sidebar.collapsed .collapse-btn {
-            transform: rotate(180deg);
         }
 
         .new-chat-btn {
@@ -179,7 +167,7 @@
         }
 
         /* Saved Exams Widget inside Sidebar */
-        .exams-section {
+        .sidebar-content {
             flex: 1;
             overflow-y: auto;
             padding: 8px 16px;
@@ -188,11 +176,11 @@
             gap: 16px;
         }
 
-        .sidebar.collapsed .exams-section {
+        .sidebar.collapsed .sidebar-content {
             display: none !important; /* Hide countdown widget when collapsed */
         }
 
-        .section-title {
+        .sidebar-section-title {
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -201,13 +189,13 @@
             margin-bottom: 8px;
         }
 
-        .exams-list {
+        .sidebar-exam-list {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
 
-        .sidebar-exam-item {
+        .sidebar-exam-card {
             padding: 8px 10px;
             background: var(--surface);
             border: 1px solid var(--line);
@@ -215,38 +203,15 @@
             font-size: 12.5px;
         }
 
-        .exam-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .exam-code {
+        .sidebar-exam-code {
             font-weight: 700;
             color: var(--indigo);
         }
 
-        .exam-days {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-        }
-
-        .exam-sub {
-            display: flex;
-            justify-content: space-between;
+        .sidebar-exam-date {
             color: var(--muted);
             font-size: 11px;
             margin-top: 2px;
-            gap: 8px;
-        }
-
-        .exam-loc {
-            text-align: right;
-            max-width: 120px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .sidebar-footer {
@@ -258,13 +223,11 @@
         }
 
         .sidebar.collapsed .sidebar-footer {
-            padding: 12px 8px;
+            padding: 12px 0;
             align-items: center;
         }
 
-        .theme-toggle-btn {
-            border: none;
-            background: transparent;
+        .sidebar-link {
             padding: 8px 10px;
             border-radius: 6px;
             display: flex;
@@ -273,23 +236,17 @@
             font-size: 13.5px;
             cursor: pointer;
             color: var(--ink);
-            width: 100%;
             transition: background 150ms ease;
-            text-align: left;
         }
-        .theme-toggle-btn:hover {
+        .sidebar-link:hover {
             background: var(--soft);
         }
 
-        .sidebar.collapsed .theme-toggle-btn {
+        .sidebar.collapsed .sidebar-link {
             justify-content: center;
             padding: 10px;
             width: 40px;
             height: 40px;
-        }
-
-        .sidebar.collapsed .theme-toggle-btn span {
-            display: none !important;
         }
 
         /* Main Chat Area Container */
@@ -326,7 +283,7 @@
 
         /* Replaced general topbar toggle button on desktop since sidebar collapse is now a dock toggle */
         .menu-toggle {
-            display: none;
+            display: none !important; /* Managed entirely inside sidebar dock */
         }
 
         .theme-btn {
@@ -464,24 +421,20 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            width: 100%;
-            max-width: 600px;
-            padding: 0 20px;
-            margin-top: 10vh;
+            width: min(720px, 100% - 32px);
+            margin-top: 15vh;
             margin-bottom: 12px;
         }
 
         .welcome-title {
             font-family: var(--font-display);
-            font-size: clamp(24px, 5vw, 32px);
+            font-size: 32px;
             font-weight: 700;
             margin-bottom: 24px;
             letter-spacing: -0.02em;
             background: linear-gradient(135deg, var(--indigo), var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            line-height: 1.2;
-            width: 100%;
         }
 
         /* Pill suggestions below center input */
@@ -640,14 +593,6 @@
             }
             .menu-toggle {
                 display: flex !important; /* Mobile menu hamburger button */
-            }
-            
-            /* Chat input responsive adjustments */
-            .chat-input-container {
-                padding: 16px;
-            }
-            .chat-feed {
-                padding-bottom: 140px; /* Leave space for absolute-positioned input container */
             }
         }
     </style>

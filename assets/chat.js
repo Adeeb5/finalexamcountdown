@@ -71,55 +71,57 @@ function renderMarkdown(text) {
         processedLines.push('</ul>');
     }
     
-    return processedLines.join('\n').replace(/\n/g, '<br/>');
+    return processedLines.join('<br />');
 }
 
 const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, sidebarCollapsed, darkMode, setDarkMode, onToggleSidebar }) => {
     return html`
         <aside className=${`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
-                <div className="logo-section">
-                    <img src="/assets/logo-icon.png" alt="Finals+" className="logo-icon" />
-                    <span className="logo-text">Finals+</span>
-                </div>
-                <button className="collapse-btn" onClick=${onToggleSidebar} title="Collapse sidebar">
-                    <${Icon} name="ChevronsLeft" size=${18} ><//>
+                <span className="sidebar-brand">
+                    <img src="/assets/logo-icon.png" alt="F+" />
+                    Finals+ AI
+                </span>
+                <button className="sidebar-toggle-btn" onClick=${onToggleSidebar} title=${sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+                    <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "PanelLeftClose"} size=${18} ><//>
                 </button>
             </div>
 
-            <button className="new-chat-btn" onClick=${onNewChat}>
-                <${Icon} name="Plus" size=${16} ><//>
-                <span>Sembang Baru</span>
+            <button className="new-chat-btn" onClick=${onNewChat} title="New Chat">
+                <span className="sidebar-text">New Chat</span>
+                <${Icon} name="SquarePen" size=${16} ><//>
             </button>
 
-            <div className="exams-section">
-                <div className="section-title">Countdown Exam Anda</div>
-                <div className="exams-list">
-                    ${exams.length === 0 ? html`
-                        <div className="empty-state">
-                            Tiada exam disimpan.
-                            <a href="/" className="setup-link">Tambah exam sekarang →</a>
-                        </div>
-                    ` : exams.map((exam, index) => html`
-                        <div key=${index} className="sidebar-exam-item">
-                            <div className="exam-main">
-                                <span className="exam-code">${exam.code}</span>
-                                <span className="exam-days">${calculateDaysLeft(exam.dateStr)}</span>
+            <div className="sidebar-content">
+                <div className="sidebar-section-title">My Countdown Timers</div>
+                <div className="sidebar-exam-list">
+                    ${exams.length ? exams.map(exam => html`
+                        <div className="sidebar-exam-card" key=${exam.code}>
+                            <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong className="sidebar-exam-code">${exam.code}</strong>
+                                <span style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>
+                                    ${calculateDaysLeft(exam.dateStr)}
+                                </span>
                             </div>
-                            <div className="exam-sub">
-                                <span>${formatDate(exam.dateStr)}</span>
-                                <span className="exam-loc">${exam.location || 'No Location'}</span>
-                            </div>
+                            <div className="sidebar-exam-date">${formatDate(exam.dateStr)} - ${exam.location}</div>
                         </div>
-                    `)}
+                    `) : html`
+                        <div style=${{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', padding: '12px', border: '1px dashed var(--line)', borderRadius: '6px' }}>
+                            No exams loaded. Import timetable on home page to show timers here.
+                        </div>
+                    `}
                 </div>
             </div>
 
             <div className="sidebar-footer">
-                <button className="theme-toggle-btn" onClick=${() => setDarkMode(!darkMode)}>
+                <div className="sidebar-link" onClick=${() => setDarkMode(!darkMode)} title=${darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
                     <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${16} ><//>
-                    <span>${darkMode ? 'Mod Terang' : 'Mod Gelap'}</span>
-                </button>
+                    <span className="sidebar-text">${darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                </div>
+                <a className="sidebar-link" href="/" title="Back to Home">
+                    <${Icon} name="Home" size=${16} ><//>
+                    <span className="sidebar-text">Back to Home</span>
+                </a>
             </div>
         </aside>
     `;
@@ -201,7 +203,7 @@ const ChatApp = () => {
 
             setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'system-error', content: `Ralat: ${error.message}. Cuba lagi sebentar.` }]);
+            setMessages(prev => [...prev, { role: 'system-error', content: `Error: ${error.message}. Please try again shortly.` }]);
         } finally {
             setLoading(false);
         }
@@ -212,10 +214,10 @@ const ChatApp = () => {
     };
 
     const suggestions = [
-        { title: "Tips study", icon: "BookOpen", query: "Beri tips belajar saat-saat akhir untuk subjek yang susah" },
-        { title: "Rancang jadual", icon: "Calendar", query: "Bagaimana cara merancang jadual belajar mengikut tarikh peperiksaan saya?" },
-        { title: "Atasi stres", icon: "Smile", query: "Cadangkan cara mengatasi stres peperiksaan" },
-        { title: "Buat kuiz", icon: "HelpCircle", query: "Buatkan kuiz ringkas untuk membantu saya menghafal subjek saya" }
+        { title: "Study tips", icon: "BookOpen", query: "Give me last-minute study tips for difficult subjects" },
+        { title: "Plan schedule", icon: "Calendar", query: "How do I plan a study schedule based on my exam dates?" },
+        { title: "Manage stress", icon: "Smile", query: "Suggest ways to manage exam stress" },
+        { title: "Create quiz", icon: "HelpCircle", query: "Create a simple quiz to help me memorize my subjects" }
     ];
 
     const renderInputBox = () => html`
@@ -230,7 +232,7 @@ const ChatApp = () => {
                         handleSend();
                     }
                 }}
-                placeholder="Tanya apa-apa..." 
+                placeholder="Ask anything..." 
                 rows="1"
                 disabled=${loading}
             />
@@ -276,7 +278,7 @@ const ChatApp = () => {
                 <div className="chat-feed-wrapper">
                     ${messages.length === 0 ? html`
                         <div className="welcome-container">
-                            <h1 className="welcome-title">Apa yang boleh saya bantu?</h1>
+                            <h1 className="welcome-title">What can I help with?</h1>
                         </div>
                     ` : html`
                         <div className="chat-feed">
@@ -323,7 +325,7 @@ const ChatApp = () => {
                         </div>
                     ` : html`
                         <div className="chat-disclaimer">
-                            Finals+ AI boleh membuat kesilapan. Sila semak jadual dan tempat peperiksaan rasmi anda.
+                            Finals+ AI can make mistakes. Please check your official exam schedules and venues.
                         </div>
                     `}
                 </div>
