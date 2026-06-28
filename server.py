@@ -353,7 +353,7 @@ class Handler(SimpleHTTPRequestHandler):
                 groq_messages.append({"role": "user", "content": user_msg})
 
                 req_data = {
-                    "model": "llama-3.3-70b-specdec",
+                    "model": "llama-3.3-70b-versatile",
                     "messages": groq_messages,
                     "max_tokens": 800
                 }
