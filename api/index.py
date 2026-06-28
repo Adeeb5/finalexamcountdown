@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 5: update Groq model to llama-3.3-70b-versatile
+# Force rebuild 6: add student level picker and syllabus study buddy
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

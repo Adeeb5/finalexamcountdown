@@ -3,6 +3,7 @@ const html = htm.bind(React.createElement);
 
 const STORAGE_KEY = 'uitm-final-exams-v1';
 const CHAT_STORAGE_KEY = 'uitm-chat-session-v1';
+const LEVEL_STORAGE_KEY = 'uitm-student-level';
 
 function loadStoredExams() {
     try {
@@ -135,6 +136,17 @@ const ChatApp = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+    const [studentLevel, setStudentLevel] = useState(() => localStorage.getItem(LEVEL_STORAGE_KEY) || null);
+
+    const selectLevel = (level) => {
+        localStorage.setItem(LEVEL_STORAGE_KEY, level);
+        setStudentLevel(level);
+    };
+
+    const changeLevel = () => {
+        localStorage.removeItem(LEVEL_STORAGE_KEY);
+        setStudentLevel(null);
+    };
 
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -192,7 +204,8 @@ const ChatApp = () => {
                 body: new URLSearchParams({
                     message: query,
                     history: JSON.stringify(chatHistory),
-                    exams: JSON.stringify(exams)
+                    exams: JSON.stringify(exams),
+                    level: studentLevel || 'degree'
                 })
             });
 
@@ -250,6 +263,33 @@ const ChatApp = () => {
         }
     };
 
+    // Level picker overlay
+    if (!studentLevel) {
+        return html`
+            <div className="level-picker-overlay">
+                <div className="level-picker-card">
+                    <div className="level-picker-logo">
+                        <img src="/assets/logo-icon.png" alt="Finals+" style=${{ width: 48, height: 48 }} />
+                    </div>
+                    <h1 className="level-picker-title">Selamat datang ke Finals+ AI</h1>
+                    <p className="level-picker-subtitle">Pilih level pengajian awak supaya AI boleh bantu dengan lebih tepat</p>
+                    <div className="level-picker-buttons">
+                        <button className="level-btn level-btn-diploma" onClick=${() => selectLevel('diploma')}>
+                            <span className="level-btn-emoji">🎓</span>
+                            <span className="level-btn-label">Diploma</span>
+                            <span className="level-btn-desc">Pre-Diploma / Diploma</span>
+                        </button>
+                        <button className="level-btn level-btn-degree" onClick=${() => selectLevel('degree')}>
+                            <span className="level-btn-emoji">📚</span>
+                            <span className="level-btn-label">Degree</span>
+                            <span className="level-btn-desc">Sarjana Muda / Bachelor</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     return html`
         <div className=${`chat-app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <${Sidebar} 
@@ -268,6 +308,9 @@ const ChatApp = () => {
                     <div className="topbar-left">
                         <button className="menu-toggle" onClick=${() => setSidebarOpen(!sidebarOpen)} title="Toggle sidebar">
                             <${Icon} name="Menu" size=${20} ><//>
+                        </button>
+                        <button className="level-badge" onClick=${changeLevel} title="Tukar level pengajian">
+                            ${studentLevel === 'diploma' ? '🎓' : '📚'} ${studentLevel === 'diploma' ? 'Diploma' : 'Degree'}
                         </button>
                     </div>
                     <button className="theme-btn" onClick=${() => setDarkMode(!darkMode)}>
