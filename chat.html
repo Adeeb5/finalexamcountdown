@@ -17,12 +17,13 @@
             --royal: #36266c;
             --navy: #20356b;
             --gold: #ffc94e;
-            --ink: #0d0d0d;
-            --muted: #676767;
-            --soft: #f4f4f4;
+            --ink: #1f2433;
+            --muted: #5f5870;
+            --soft: #f4f2fa;
             --surface: #ffffff;
-            --surface-card: #f9f9f9;
-            --line: rgba(0, 0, 0, 0.08);
+            --surface-card: #f9f9fb;
+            --ink-lead: #342d48;
+            --line: rgba(31, 36, 51, 0.08);
             --danger: #b42318;
             --success: #067647;
             --font-display: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -30,14 +31,15 @@
         }
 
         body.dark-mode {
-            --surface: #212121;
-            --surface-card: #171717;
-            --ink: #ececec;
-            --soft: #2f2f2f;
-            --muted: #b4b4b4;
+            --surface: #0b0e14;
+            --surface-card: #151922;
+            --ink: #f4f2fa;
+            --soft: #1d222e;
+            --muted: #958ea3;
             --line: rgba(255, 255, 255, 0.08);
             --indigo: #788bfc;
             --purple: #9a8bfc;
+            --ink-lead: #d0c9e3;
         }
 
         * { box-sizing: border-box; }
@@ -65,7 +67,7 @@
             position: relative;
         }
 
-        /* Sidebar Styling (Clean Gray ChatGPT layout) */
+        /* Sidebar Styling (Clean Apple-style Panel) */
         .sidebar {
             width: 260px;
             background: var(--surface-card);
@@ -74,8 +76,15 @@
             flex-direction: column;
             height: 100%;
             flex-shrink: 0;
-            transition: transform 0.2s ease-in-out;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 10;
+        }
+
+        .chat-app.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+            width: 0;
+            margin-left: -260px;
+            pointer-events: none;
         }
 
         .sidebar-header {
@@ -83,6 +92,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            border-bottom: 1px solid var(--line);
         }
 
         .sidebar-brand {
@@ -108,6 +118,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 150ms ease, color 150ms ease;
         }
         .sidebar-toggle-btn:hover {
             background: var(--soft);
@@ -115,22 +126,23 @@
         }
 
         .new-chat-btn {
-            margin: 8px 16px;
+            margin: 12px 16px 8px;
             padding: 10px 12px;
             border-radius: 8px;
-            border: 1px solid transparent;
-            background: transparent;
+            border: 1px solid var(--line);
+            background: var(--surface);
             color: var(--ink);
-            font-weight: 500;
-            font-size: 14px;
+            font-weight: 600;
+            font-size: 13.5px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: background 150ms ease;
+            transition: background 150ms ease, border-color 150ms ease;
         }
         .new-chat-btn:hover {
             background: var(--soft);
+            border-color: var(--indigo);
         }
 
         /* Saved Exams Widget inside Sidebar */
@@ -242,14 +254,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 150ms ease, color 150ms ease;
         }
         .menu-toggle:hover, .theme-btn:hover {
             background: var(--soft);
             color: var(--ink);
         }
-
         .menu-toggle {
-            display: none; /* Only show on mobile */
+            display: none;
+        }
+        .chat-app.sidebar-collapsed .menu-toggle {
+            display: flex;
+        }
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: flex !important;
+            }
         }
 
         /* Chat Scroll Feed */
@@ -270,7 +290,7 @@
             gap: 28px;
         }
 
-        /* Message Rows - ChatGPT Clean Style */
+        /* Message Rows - Apple Clean Style */
         .message-row {
             display: flex;
             gap: 16px;
@@ -296,9 +316,7 @@
         }
 
         .message-row.user .avatar {
-            background: var(--indigo);
-            color: #ffffff;
-            display: none; /* Hide user avatar for extra clean look like new ChatGPT */
+            display: none;
         }
 
         .bubble {
@@ -309,10 +327,14 @@
         }
 
         .message-row.user .bubble {
-            background: var(--soft);
-            color: var(--ink);
+            background: var(--indigo);
+            color: #ffffff;
             padding: 10px 16px;
             border-radius: 20px;
+        }
+        .dark-mode .message-row.user .bubble {
+            background: var(--indigo);
+            color: #ffffff;
         }
 
         .message-row.model .bubble {
@@ -365,7 +387,7 @@
             40% { transform: scale(1.0); }
         }
 
-        /* Welcome Page / ChatGPT Style Center Input */
+        /* Welcome Page / Apple Style Center Input */
         .welcome-container {
             display: flex;
             flex-direction: column;
@@ -380,9 +402,12 @@
         .welcome-title {
             font-family: var(--font-display);
             font-size: 32px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 24px;
             letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--indigo), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         /* Pill suggestions below center input */
@@ -400,7 +425,7 @@
             border-radius: 999px;
             padding: 8px 16px;
             font-size: 13.5px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--muted);
             cursor: pointer;
             display: inline-flex;
@@ -409,12 +434,12 @@
             transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
         }
         .suggestion-pill:hover {
-            border-color: var(--ink);
+            border-color: var(--indigo);
             background: var(--soft);
-            color: var(--ink);
+            color: var(--indigo);
         }
 
-        /* Large Pill Input Box (ChatGPT Style) */
+        /* Large Pill Input Box (Apple Style) */
         .chat-input-container {
             width: 100%;
             padding: 24px;
@@ -448,11 +473,8 @@
             transition: border-color 150ms ease, box-shadow 150ms ease;
         }
         .chat-input-wrapper:focus-within {
-            border-color: rgba(0, 0, 0, 0.2);
-            box-shadow: rgba(0, 0, 0, 0.05) 0 4px 20px;
-        }
-        .dark-mode .chat-input-wrapper:focus-within {
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: var(--indigo);
+            box-shadow: rgba(63, 81, 181, 0.05) 0 4px 20px;
         }
 
         .chat-input-left {
@@ -462,7 +484,7 @@
             cursor: pointer;
         }
         .chat-input-left:hover {
-            color: var(--ink);
+            color: var(--indigo);
         }
 
         .chat-input-wrapper textarea {
@@ -476,10 +498,12 @@
             line-height: 1.5;
             padding: 2px 0;
             outline: none;
+            scrollbar-width: none; /* Hide standard Firefox scrollbar arrows */
+            -ms-overflow-style: none; /* Hide IE scrollbar arrows */
         }
-
-        .chat-input-wrapper textarea::placeholder {
-            color: var(--muted);
+        /* Hide Webkit Chrome scrollbar arrows to fix the up/down arrow issue on Windows */
+        .chat-input-wrapper textarea::-webkit-scrollbar {
+            display: none;
         }
 
         .chat-input-actions {
@@ -501,13 +525,13 @@
         }
         .mic-btn:hover {
             background: var(--soft);
-            color: var(--ink);
+            color: var(--indigo);
         }
 
         .send-btn {
-            background: var(--ink);
+            background: var(--indigo);
             border: none;
-            color: var(--surface);
+            color: #ffffff;
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -518,12 +542,8 @@
             flex-shrink: 0;
             transition: opacity 150ms ease, background 150ms ease;
         }
-        .dark-mode .send-btn {
-            background: #ffffff;
-            color: #0d0d0d;
-        }
         .send-btn:hover {
-            opacity: 0.9;
+            background: var(--purple);
         }
         .send-btn:disabled {
             background: var(--soft);
@@ -544,15 +564,14 @@
             .sidebar {
                 position: absolute;
                 transform: translateX(-100%);
+                width: 260px !important;
+                margin-left: 0 !important;
             }
             .sidebar.open {
                 transform: translateX(0);
             }
-            .menu-toggle {
-                display: flex;
-            }
-            .welcome-title {
-                font-size: 26px;
+            .chat-app.sidebar-collapsed .sidebar {
+                transform: translateX(-100%);
             }
         }
     </style>

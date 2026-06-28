@@ -74,7 +74,7 @@ function renderMarkdown(text) {
     return processedLines.join('<br />');
 }
 
-const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setDarkMode }) => {
+const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setDarkMode, onToggleSidebar }) => {
     return html`
         <aside className=${`sidebar ${sidebarOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
@@ -82,8 +82,8 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
                     <img src="/assets/logo-icon.png" alt="F+" />
                     Finals+ AI
                 </span>
-                <button className="sidebar-toggle-btn" onClick=${() => setSidebarOpen(false)}>
-                    <${Icon} name="X" size=${18} ><//>
+                <button className="sidebar-toggle-btn" onClick=${onToggleSidebar} title="Collapse sidebar">
+                    <${Icon} name="PanelLeftClose" size=${18} ><//>
                 </button>
             </div>
 
@@ -133,7 +133,16 @@ const ChatApp = () => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+    const toggleSidebar = () => {
+        if (window.innerWidth <= 768) {
+            setSidebarOpen(!sidebarOpen);
+        } else {
+            setSidebarCollapsed(!sidebarCollapsed);
+        }
+    };
 
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -250,7 +259,7 @@ const ChatApp = () => {
     `;
 
     return html`
-        <div className="chat-app">
+        <div className=${`chat-app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <${Sidebar} 
                 exams=${exams} 
                 onNewChat=${() => setMessages([])} 
@@ -258,13 +267,20 @@ const ChatApp = () => {
                 setSidebarOpen=${setSidebarOpen} 
                 darkMode=${darkMode} 
                 setDarkMode=${setDarkMode} 
+                onToggleSidebar=${toggleSidebar}
             ><//>
 
             <main className=${`chat-main ${messages.length > 0 ? 'active' : ''}`}>
                 <div className="chat-topbar">
                     <div className="topbar-left">
-                        <button className="menu-toggle" onClick=${() => setSidebarOpen(true)}>
-                            <${Icon} name="Menu" size=${20} ><//>
+                        <button className="menu-toggle" onClick=${() => {
+                            if (window.innerWidth <= 768) {
+                                setSidebarOpen(true);
+                            } else {
+                                setSidebarCollapsed(!sidebarCollapsed);
+                            }
+                        }} title="Toggle sidebar">
+                            <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "Menu"} size=${20} ><//>
                         </button>
                     </div>
                     <button className="theme-btn" onClick=${() => setDarkMode(!darkMode)}>
@@ -323,7 +339,7 @@ const ChatApp = () => {
                     <div className="chat-input-container">
                         ${renderInputBox()}
                         <div className="chat-disclaimer">
-                            Finals+ AI boleh membuat kesilapan. Sila semak jadual dan venue exam rasmi anda di Student Portal UiTM.
+                            Finals+ AI boleh membuat kesilapan. Sila semak jadual dan venue exam rasmi anda.
                         </div>
                     </div>
                 ` : null}
