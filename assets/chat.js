@@ -136,6 +136,14 @@ const ChatApp = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
+    const toggleSidebar = () => {
+        if (window.innerWidth <= 768) {
+            setSidebarOpen(!sidebarOpen);
+        } else {
+            setSidebarCollapsed(!sidebarCollapsed);
+        }
+    };
+
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
 
