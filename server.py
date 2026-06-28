@@ -381,7 +381,18 @@ class Handler(SimpleHTTPRequestHandler):
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
-                    self.send_json(500, {'error': f'AI request failed: {str(e)}'})
+                    error_msg = str(e)
+                    if hasattr(e, 'read'):
+                        try:
+                            error_body = e.read().decode('utf-8', errors='replace')
+                            error_json = json.loads(error_body)
+                            if 'error' in error_json and 'message' in error_json['error']:
+                                error_msg = f"{e} - {error_json['error']['message']}"
+                            else:
+                                error_msg = f"{e} - {error_body}"
+                        except Exception:
+                            pass
+                    self.send_json(500, {'error': f'AI request failed: {error_msg}'})
                 return
 
             self.send_json(404, {'error': 'Unknown API route.'})
