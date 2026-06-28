@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 15: update all common course mapping schemes of work
+# Force rebuild 16: add fallback rules for other course codes
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
