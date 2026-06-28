@@ -625,12 +625,20 @@ class Handler(SimpleHTTPRequestHandler):
                                     elif tool_call['function']['name'] == 'search_exam_papers':
                                         args = json.loads(tool_call['function']['arguments'])
                                         scrape_res = scrape_past_exam_papers(args.get('course_code', ''))
+                                        # Trim payload data: keep only first 4 results to reduce prompt tokens (TPM)
+                                        lines = scrape_res.split('\n')
+                                        trimmed_res = '\n'.join(lines[:4])
                                         groq_messages.append({
                                             "role": "tool",
                                             "tool_call_id": tool_call['id'],
                                             "name": "search_exam_papers",
-                                            "content": scrape_res
+                                            "content": trimmed_res
                                         })
+                                
+                                # Introduce a short delay to stay under Tokens/Requests Per Minute (TPM/RPM) rate limits
+                                import time
+                                time.sleep(1.2)
+                                
                                 # Continue loop to get final text response from the model
                                 continue
                             

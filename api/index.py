@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 26: switch model to qwen/qwen3-32b to match allowed tier models
+# Force rebuild 27: add payload token trimming and execution sleep delay
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
