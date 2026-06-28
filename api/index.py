@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 3: fix missing global os import NameError
+# Force rebuild 4: add User-Agent to Groq headers to bypass Cloudflare 1010 block
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
