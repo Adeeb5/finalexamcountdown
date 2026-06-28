@@ -356,7 +356,7 @@ class Handler(SimpleHTTPRequestHandler):
                 }
                 
                 req_body = json.dumps(req_data).encode('utf-8')
-                req_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                req_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
                 req = Request(
                     req_url,
@@ -364,15 +364,15 @@ class Handler(SimpleHTTPRequestHandler):
                     headers={'Content-Type': 'application/json'}
                 )
                 
-                context = ssl.create_default_context()
-                with urlopen(req, context=context, timeout=20) as resp:
-                    resp_data = json.loads(resp.read().decode('utf-8'))
-                    try:
+                try:
+                    with urlopen(req, timeout=8) as resp:
+                        resp_data = json.loads(resp.read().decode('utf-8'))
                         reply = resp_data['candidates'][0]['content']['parts'][0]['text']
                         self.send_json(200, {'reply': reply})
-                    except Exception as e:
-                        print("Error parsing Gemini response:", resp_data, e)
-                        self.send_json(500, {'error': 'Failed to parse AI response.'})
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    self.send_json(500, {'error': f'AI request failed: {str(e)}'})
                 return
 
             self.send_json(404, {'error': 'Unknown API route.'})
