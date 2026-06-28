@@ -303,8 +303,18 @@ class Handler(SimpleHTTPRequestHandler):
                 
                 # Retrieve from already-parsed fields (avoids re-reading consumed stream)
                 user_msg = (fields.get('message', [''])[0] or fields.get('query', [''])[0] or '').strip()
-                history = json.loads(fields.get('history', ['[]'])[0])
-                loaded_exams = json.loads(fields.get('exams', ['[]'])[0])
+                
+                try:
+                    history_str = fields.get('history', ['[]'])[0]
+                    history = json.loads(history_str) if history_str else []
+                except Exception:
+                    history = []
+                    
+                try:
+                    exams_str = fields.get('exams', ['[]'])[0]
+                    loaded_exams = json.loads(exams_str) if exams_str else []
+                except Exception:
+                    loaded_exams = []
                 
                 contents = []
                 for msg in history:
