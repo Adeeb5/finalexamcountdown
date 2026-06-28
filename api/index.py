@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 25: switch model to llama3-8b-8192 to bypass rate limits
+# Force rebuild 26: switch model to qwen/qwen3-32b to match allowed tier models
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

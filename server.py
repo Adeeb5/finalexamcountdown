@@ -572,7 +572,7 @@ class Handler(SimpleHTTPRequestHandler):
                 # Perform the agentic loop (up to 6 iterations for tool calls)
                 for _ in range(6):
                     req_data = {
-                        "model": "llama3-8b-8192",
+                        "model": "qwen/qwen3-32b",
                         "messages": groq_messages,
                         "tools": [search_tool, scrape_tool],
                         "tool_choice": "auto",
