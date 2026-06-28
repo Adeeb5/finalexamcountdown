@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 21: add PTAR past exam paper scraping integration
+# Force rebuild 22: align prompt guidelines for both past exams and web search tools
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
