@@ -648,6 +648,28 @@ class Handler(SimpleHTTPRequestHandler):
                             return
                             
                     except Exception as e:
+                        # Handle Rate Limits (HTTP 429) gracefully by sleeping and retrying
+                        is_429 = False
+                        if hasattr(e, 'code') and e.code == 429:
+                            is_429 = True
+                        elif "429" in str(e):
+                            is_429 = True
+
+                        if is_429:
+                            import time
+                            # Extract suggested retry duration or default to 5 seconds
+                            retry_after = 5.0
+                            if hasattr(e, 'headers') and e.headers.get('Retry-After'):
+                                try:
+                                    retry_after = float(e.headers.get('Retry-After'))
+                                except ValueError:
+                                    pass
+                            print(f"HTTP 429 Rate Limit hit. Retrying in {retry_after} seconds...")
+                            import time
+                            time.sleep(retry_after)
+                            # Retry this iteration of the loop by repeating the request
+                            continue
+
                         import traceback
                         traceback.print_exc()
                         error_msg = str(e)

@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 28: increase sleep delay throttle to 2.5s
+# Force rebuild 29: add HTTP 429 backoff retry loops
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
