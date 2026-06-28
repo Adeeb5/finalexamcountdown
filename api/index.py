@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 20: set assistant content to None for tool calls
+# Force rebuild 21: add PTAR past exam paper scraping integration
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

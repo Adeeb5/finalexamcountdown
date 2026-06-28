@@ -238,6 +238,77 @@ class Handler(SimpleHTTPRequestHandler):
             path = self.headers.get('x-vercel-forwarded-path') or self.path
             path = path.split('?')[0]
 
+            if path == '/api/scrape-exam' or path.endswith('/scrape-exam'):
+                course = (fields.get('course', [''])[0] or '').strip().upper()
+                if not course:
+                    self.send_json(400, {'error': 'Course code is required.'})
+                    return
+
+                try:
+                    # Construct HTTP POST request to ptarep search endpoint
+                    url = 'https://exampaper.uitm.edu.my/ptarep/report.php?p=05'
+                    post_data = urlencode({
+                        'course': course,
+                        'fyear': '',
+                        'fsessi': '',
+                        'search': 'Search'
+                    }).encode('utf-8')
+
+                    headers = {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Referer': url,
+                        'Cookie': 'PHPSESSID=403sl5ksf7tu4jh9rdh1nkogs2'
+                    }
+
+                    req = Request(url, data=post_data, headers=headers)
+                    opener = make_opener()
+                    with opener.open(req, timeout=15) as resp:
+                        html_content = resp.read().decode('utf-8', errors='replace')
+
+                    # Parse HTML table rows using regex (Cheerio-style static extraction pattern)
+                    results = []
+                    # Find all table rows
+                    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html_content, flags=re.I | re.S)
+                    for row in rows:
+                        # Extract all cells (td)
+                        cells = re.findall(r'<td[^>]*>(.*?)</td>', row, flags=re.I | re.S)
+                        if len(cells) >= 6:
+                            num = strip_html(cells[0])
+                            # Skip header row if it contains NUM or NUMERICAL indexes
+                            if num.lower() == 'num' or not re.match(r'^\d+\.?$', num):
+                                continue
+                            faculty = strip_html(cells[1])
+                            code = strip_html(cells[2])
+                            name = strip_html(cells[3])
+                            year = strip_html(cells[4])
+                            session = strip_html(cells[5])
+
+                            # Parse out pdf download link from last cell if exists
+                            pdf_url = ''
+                            pdf_match = re.search(r'href=["\'](r3port_055\.php\?[^"\']+)["\']', cells[5], flags=re.I)
+                            if not pdf_match and len(cells) > 6:
+                                pdf_match = re.search(r'href=["\'](r3port_055\.php\?[^"\']+)["\']', cells[6], flags=re.I)
+                            if pdf_match:
+                                pdf_url = 'https://exampaper.uitm.edu.my/ptarep/' + html_utils.unescape(pdf_match.group(1))
+
+                            results.append({
+                                'num': num.replace('.', ''),
+                                'faculty': faculty,
+                                'code': code,
+                                'courseName': name,
+                                'year': year,
+                                'session': session,
+                                'pdfUrl': pdf_url
+                            })
+
+                    self.send_json(200, {'results': results})
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    self.send_json(500, {'error': f'Failed to scrape exam papers: {str(e)}'})
+                return
+
             if path == '/api/exams' or path.endswith('/exams'):
                 codes = parse_codes(fields.get('codes', [''])[0] or fields.get('search_course', [''])[0])
                 skip_aims = (fields.get('skip_aims', [''])[0] or '').lower() == 'true'
@@ -408,6 +479,46 @@ class Handler(SimpleHTTPRequestHandler):
                     except Exception as e:
                         return f"Search error: {str(e)}"
 
+                # Define a helper function to scrape the exam paper portal
+                def scrape_past_exam_papers(course_code):
+                    print(f"Scraping past exam papers for: {course_code}")
+                    try:
+                        url = 'https://exampaper.uitm.edu.my/ptarep/report.php?p=05'
+                        post_data = urlencode({
+                            'course': course_code,
+                            'fyear': '',
+                            'fsessi': '',
+                            'search': 'Search'
+                        }).encode('utf-8')
+                        headers = {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Referer': url,
+                            'Cookie': 'PHPSESSID=403sl5ksf7tu4jh9rdh1nkogs2'
+                        }
+                        req = Request(url, data=post_data, headers=headers)
+                        opener = make_opener()
+                        with opener.open(req, timeout=12) as response:
+                            html_content = response.read().decode('utf-8', errors='replace')
+
+                        results = []
+                        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html_content, flags=re.I | re.S)
+                        for row in rows:
+                            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, flags=re.I | re.S)
+                            if len(cells) >= 6:
+                                num = strip_html(cells[0])
+                                if num.lower() == 'num' or not re.match(r'^\d+\.?$', num):
+                                    continue
+                                faculty = strip_html(cells[1])
+                                code = strip_html(cells[2])
+                                name = strip_html(cells[3])
+                                year = strip_html(cells[4])
+                                session = strip_html(cells[5])
+                                results.append(f"Faculty: {faculty} | Code: {code} | Name: {name} | Year: {year} | Session: {session}")
+                        return "\n".join(results[:8]) if results else "No past exam papers found in portal."
+                    except Exception as e:
+                        return f"Scrape error: {str(e)}"
+
                 api_key = os.environ.get('GROQ_API_KEY')
                 if not api_key:
                     self.send_json(400, {'error': 'GROQ_API_KEY is not configured on the server. Please add it to your environment variables.'})
@@ -419,21 +530,39 @@ class Handler(SimpleHTTPRequestHandler):
                     groq_messages.append({"role": role, "content": h_msg.get("content", "")})
                 groq_messages.append({"role": "user", "content": user_msg})
 
-                # Define the search tool schema
+                # Define the search and scraping tool schemas
                 search_tool = {
                     "type": "function",
                     "function": {
                         "name": "google_search",
-                        "description": "Searches the web for UiTM syllabus topics, course details, or Scheme of Work outlines when a student asks about a course code or exam topics.",
+                        "description": "Searches the web for general UiTM syllabus topics, course details, or Scheme of Work outlines.",
                         "parameters": {
                             "type": "object",
                             "properties": {
                                 "query": {
                                     "type": "string",
-                                    "description": "The search query (e.g. 'CSC248 syllabus scheme of work' or 'ITT300 topics')."
+                                    "description": "The search query (e.g. 'CSC248 syllabus scheme of work')."
                                 }
                             },
                             "required": ["query"]
+                        }
+                    }
+                }
+                
+                scrape_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": "search_exam_papers",
+                        "description": "Searches the UiTM PTAR past exam paper repository to retrieve official exam papers, faculty details, course titles, year of exam, and session details.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "course_code": {
+                                    "type": "string",
+                                    "description": "The course code to look up (e.g. 'ITT300' or 'CSC248')."
+                                }
+                            },
+                            "required": ["course_code"]
                         }
                     }
                 }
@@ -445,7 +574,7 @@ class Handler(SimpleHTTPRequestHandler):
                     req_data = {
                         "model": "llama-3.3-70b-versatile",
                         "messages": groq_messages,
-                        "tools": [search_tool],
+                        "tools": [search_tool, scrape_tool],
                         "tool_choice": "auto",
                         "max_tokens": 800
                     }
@@ -486,6 +615,15 @@ class Handler(SimpleHTTPRequestHandler):
                                             "tool_call_id": tool_call['id'],
                                             "name": "google_search",
                                             "content": search_res
+                                        })
+                                    elif tool_call['function']['name'] == 'search_exam_papers':
+                                        args = json.loads(tool_call['function']['arguments'])
+                                        scrape_res = scrape_past_exam_papers(args.get('course_code', ''))
+                                        groq_messages.append({
+                                            "role": "tool",
+                                            "tool_call_id": tool_call['id'],
+                                            "name": "search_exam_papers",
+                                            "content": scrape_res
                                         })
                                 # Continue loop to get final text response from the model
                                 continue
