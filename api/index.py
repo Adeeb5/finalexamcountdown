@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild: Use Groq API exclusively
+# Force rebuild 2: remove duplicate Gemini verification checks
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

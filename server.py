@@ -295,15 +295,7 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(200, {'codes': codes, 'subjects': subjects})
                 return
 
-            if path == '/api/chat' or path.endswith('/chat'):
-                import os
-                from urllib.request import urlopen
-                api_key = os.environ.get('GEMINI_API_KEY')
-                if not api_key:
-                    self.send_json(400, {'error': 'GEMINI_API_KEY is not configured on the server. Please add it to your environment variables.'})
-                    return
-                
-                # Retrieve from already-parsed fields (avoids re-reading consumed stream)
+            elif path == '/api/chat' or path.endswith('/chat'):
                 user_msg = (fields.get('message', [''])[0] or fields.get('query', [''])[0] or '').strip()
                 
                 try:
@@ -357,7 +349,7 @@ class Handler(SimpleHTTPRequestHandler):
                 for h_msg in history:
                     role = "assistant" if h_msg.get("role") == "model" else "user"
                     groq_messages.append({"role": role, "content": h_msg.get("content", "")})
-                groq_messages.append({"role": "user", "content": msg})
+                groq_messages.append({"role": "user", "content": user_msg})
 
                 req_data = {
                     "model": "llama-3.3-70b-specdec",
