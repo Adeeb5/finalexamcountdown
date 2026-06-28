@@ -324,8 +324,6 @@ class Handler(SimpleHTTPRequestHandler):
                     text_val = msg.get("content", "").strip()
                     if not text_val:
                         continue
-                    # Gemini requires chat history to start with a 'user' message.
-                    # We skip any bot welcome messages at the very beginning.
                     if not contents and role == "model":
                         continue
                     contents.append({
@@ -391,10 +389,50 @@ class Handler(SimpleHTTPRequestHandler):
                         self.send_json(500, {'error': f'OpenAI API Error: {str(e)}'})
                         return
 
-                # 2. Gemini Provider Routing (Custom or Default Key)
+                # 2. Check if Groq is available as default or chosen specifically
+                groq_key = os.environ.get('GROQ_API_KEY')
+                if (custom_provider == 'default' and groq_key) or (custom_provider == 'groq'):
+                    api_key = custom_key.strip() if custom_key.strip() else groq_key
+                    if not api_key:
+                        self.send_json(400, {'error': 'GROQ_API_KEY is not configured on the server. Please add it to your environment variables.'})
+                        return
+
+                    groq_messages = [{"role": "system", "content": system_instruction}]
+                    for h_msg in history:
+                        role = "assistant" if h_msg.get("role") == "model" else "user"
+                        groq_messages.append({"role": role, "content": h_msg.get("content", "")})
+                    groq_messages.append({"role": "user", "content": msg})
+
+                    req_data = {
+                        "model": "llama-3.3-70b-specdec",
+                        "messages": groq_messages,
+                        "max_tokens": 800
+                    }
+
+                    url = 'https://api.groq.com/openai/v1/chat/completions'
+                    req = Request(
+                        url,
+                        data=json.dumps(req_data).encode('utf-8'),
+                        headers={
+                            'Content-Type': 'application/json',
+                            'Authorization': f'Bearer {api_key}'
+                        }
+                    )
+                    try:
+                        opener = make_opener()
+                        with opener.open(req, timeout=9) as resp:
+                            resp_data = json.loads(resp.read().decode('utf-8'))
+                            reply = resp_data['choices'][0]['message']['content']
+                            self.send_json(200, {'reply': reply})
+                            return
+                    except Exception as e:
+                        self.send_json(500, {'error': f'Groq API Error: {str(e)}'})
+                        return
+
+                # 3. Gemini Provider Routing (Custom or Default Key)
                 api_key = custom_key.strip() if (custom_provider == 'gemini' and custom_key.strip()) else os.environ.get('GEMINI_API_KEY')
                 if not api_key:
-                    self.send_json(400, {'error': 'GEMINI_API_KEY is not configured on the server. Please add it to your environment variables.'})
+                    self.send_json(400, {'error': 'Neither GROQ_API_KEY nor GEMINI_API_KEY is configured on the server.'})
                     return
                 
                 contents = []
