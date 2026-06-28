@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 30: focus AI prompts on study advice, schedule plans, stress control, and quiz assistance
+# Force rebuild 31: enforce strict exam prep out-of-context guardrails
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
