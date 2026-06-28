@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 29: add HTTP 429 backoff retry loops
+# Force rebuild 30: focus AI prompts on study advice, schedule plans, stress control, and quiz assistance
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
