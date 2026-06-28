@@ -74,7 +74,7 @@ function renderMarkdown(text) {
     return processedLines.join('<br />');
 }
 
-const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, sidebarCollapsed, darkMode, setDarkMode, onToggleSidebar }) => {
+const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, sidebarCollapsed, darkMode, setDarkMode, onToggleSidebar, onOpenSettings }) => {
     return html`
         <aside className=${`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
@@ -114,14 +114,18 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, sidebarCollaps
             </div>
 
             <div className="sidebar-footer">
-                <a className="sidebar-link" href="/" title="Back to Home">
-                    <${Icon} name="Home" size=${16} ><//>
-                    <span className="sidebar-text">Back to Home</span>
-                </a>
+                <div className="sidebar-link" onClick=${onOpenSettings} title="AI Settings">
+                    <${Icon} name="Settings" size=${16} ><//>
+                    <span className="sidebar-text">AI Settings</span>
+                </div>
                 <div className="sidebar-link" onClick=${() => setDarkMode(!darkMode)} title=${darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
                     <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${16} ><//>
                     <span className="sidebar-text">${darkMode ? 'Light Mode' : 'Dark Mode'}</span>
                 </div>
+                <a className="sidebar-link" href="/" title="Back to Home">
+                    <${Icon} name="Home" size=${16} ><//>
+                    <span className="sidebar-text">Back to Home</span>
+                </a>
             </div>
         </aside>
     `;
@@ -135,6 +139,11 @@ const ChatApp = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+    
+    // Settings modal states
+    const [showSettings, setShowSettings] = useState(false);
+    const [provider, setProvider] = useState(() => localStorage.getItem('custom-provider') || 'default');
+    const [apiKey, setApiKey] = useState(() => localStorage.getItem('custom-key') || '');
 
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -192,7 +201,9 @@ const ChatApp = () => {
                 body: new URLSearchParams({
                     message: query,
                     history: JSON.stringify(chatHistory),
-                    exams: JSON.stringify(exams)
+                    exams: JSON.stringify(exams),
+                    custom_provider: provider,
+                    custom_key: apiKey
                 })
             });
 
@@ -269,6 +280,7 @@ const ChatApp = () => {
                 darkMode=${darkMode} 
                 setDarkMode=${setDarkMode} 
                 onToggleSidebar=${toggleSidebar}
+                onOpenSettings=${() => setShowSettings(true)}
             ><//>
 
             <main className=${`chat-main ${messages.length > 0 ? 'active' : ''}`}>
@@ -338,6 +350,44 @@ const ChatApp = () => {
                     `}
                 </div>
             </main>
+
+            ${showSettings ? html`
+                <div className="modal-overlay" onClick=${() => setShowSettings(false)}>
+                    <div className="settings-modal" onClick=${e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <span className="modal-title">AI Provider Settings</span>
+                            <button className="close-btn" onClick=${() => setShowSettings(false)} title="Close settings">
+                                <${Icon} name="X" size=${16} ><//>
+                            </button>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Select Model Provider</label>
+                            <select className="form-select" value=${provider} onChange=${e => setProvider(e.target.value)}>
+                                <option value="default">Default (Finals+ AI - Gemini)</option>
+                                <option value="gemini">Custom Google Gemini API Key</option>
+                                <option value="openai">Custom OpenAI ChatGPT API Key</option>
+                            </select>
+                        </div>
+                        ${provider !== 'default' ? html`
+                            <div className="form-group">
+                                <label className="form-label">API Key</label>
+                                <input 
+                                    type="password" 
+                                    className="form-input" 
+                                    placeholder=${provider === 'openai' ? 'sk-proj-...' : 'AIzaSy...'}
+                                    value=${apiKey} 
+                                    onChange=${e => setApiKey(e.target.value)}
+                                />
+                            </div>
+                        ` : null}
+                        <button className="save-settings-btn" onClick=${() => {
+                            localStorage.setItem('custom-provider', provider);
+                            localStorage.setItem('custom-key', apiKey);
+                            setShowSettings(false);
+                        }}>Save Settings</button>
+                    </div>
+                </div>
+            ` : null}
         </div>
     `;
 };
