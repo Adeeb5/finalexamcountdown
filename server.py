@@ -637,7 +637,7 @@ class Handler(SimpleHTTPRequestHandler):
                                 
                                 # Introduce a short delay to stay under Tokens/Requests Per Minute (TPM/RPM) rate limits
                                 import time
-                                time.sleep(1.2)
+                                time.sleep(2.5)
                                 
                                 # Continue loop to get final text response from the model
                                 continue
