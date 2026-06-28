@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 17: implement backend web search tool integration
+# Force rebuild 18: resolve tool_use_failed Bad Request error on Groq API
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
