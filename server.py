@@ -472,10 +472,9 @@ class Handler(SimpleHTTPRequestHandler):
                                 # Construct clean assistant tool call message structure
                                 assistant_msg = {
                                     "role": "assistant",
+                                    "content": message.get('content') or None,
                                     "tool_calls": message['tool_calls']
                                 }
-                                if message.get('content'):
-                                    assistant_msg['content'] = message['content']
                                 groq_messages.append(assistant_msg)
 
                                 for tool_call in message['tool_calls']:
