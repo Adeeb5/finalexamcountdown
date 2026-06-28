@@ -552,17 +552,17 @@ const ChatPanel = ({ exams }) => {
     };
 
     const suggestions = [
-        "Bila cuti pertengahan semester?",
-        "Bila cuti semester bermula?",
-        "Berapa hari lagi exam mula?",
-        "Bagi tips study last minute"
+        "Berapa hari lagi exam saya mula?",
+        "Bagi tips study last minute",
+        "Macam mana nak rancang jadual study?",
+        "Cadangkan cara atasi stres exam"
     ];
 
     return html`
         <section className="section soft" id="chat">
             <div className="wrap center">
                 <h2>Tanya Finals+ AI.</h2>
-                <p className="section-note">Dapatkan maklumat akademik, cuti UiTM, countdown exam, dan tips study daripada chatbot AI kami.</p>
+                <p className="section-note">Dapatkan tips study, countdown exam, dan bantuan jadual ulang kaji daripada chatbot AI kami.</p>
                 
                 <div className="chat-container">
                     <div className="chat-history" ref=${historyRef}>
