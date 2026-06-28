@@ -74,21 +74,21 @@ function renderMarkdown(text) {
     return processedLines.join('<br />');
 }
 
-const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setDarkMode, onToggleSidebar }) => {
+const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, sidebarCollapsed, darkMode, setDarkMode, onToggleSidebar }) => {
     return html`
-        <aside className=${`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <aside className=${`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
                 <span className="sidebar-brand">
                     <img src="/assets/logo-icon.png" alt="F+" />
                     Finals+ AI
                 </span>
-                <button className="sidebar-toggle-btn" onClick=${onToggleSidebar} title="Collapse sidebar">
-                    <${Icon} name="PanelLeftClose" size=${18} ><//>
+                <button className="sidebar-toggle-btn" onClick=${onToggleSidebar} title=${sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+                    <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "PanelLeftClose"} size=${18} ><//>
                 </button>
             </div>
 
-            <button className="new-chat-btn" onClick=${onNewChat}>
-                <span>New Chat</span>
+            <button className="new-chat-btn" onClick=${onNewChat} title="New Chat">
+                <span className="sidebar-text">New Chat</span>
                 <${Icon} name="SquarePen" size=${16} ><//>
             </button>
 
@@ -114,13 +114,13 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
             </div>
 
             <div className="sidebar-footer">
-                <a className="sidebar-link" href="/">
+                <a className="sidebar-link" href="/" title="Back to Home">
                     <${Icon} name="Home" size=${16} ><//>
-                    Back to Home
+                    <span className="sidebar-text">Back to Home</span>
                 </a>
-                <div className="sidebar-link" onClick=${() => setDarkMode(!darkMode)}>
+                <div className="sidebar-link" onClick=${() => setDarkMode(!darkMode)} title=${darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
                     <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${16} ><//>
-                    ${darkMode ? 'Light Mode' : 'Dark Mode'}
+                    <span className="sidebar-text">${darkMode ? 'Light Mode' : 'Dark Mode'}</span>
                 </div>
             </div>
         </aside>
@@ -135,14 +135,6 @@ const ChatApp = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-    const toggleSidebar = () => {
-        if (window.innerWidth <= 768) {
-            setSidebarOpen(!sidebarOpen);
-        } else {
-            setSidebarCollapsed(!sidebarCollapsed);
-        }
-    };
 
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -258,6 +250,14 @@ const ChatApp = () => {
         </div>
     `;
 
+    const toggleSidebar = () => {
+        if (window.innerWidth <= 768) {
+            setSidebarOpen(!sidebarOpen);
+        } else {
+            setSidebarCollapsed(!sidebarCollapsed);
+        }
+    };
+
     return html`
         <div className=${`chat-app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <${Sidebar} 
@@ -265,6 +265,7 @@ const ChatApp = () => {
                 onNewChat=${() => setMessages([])} 
                 sidebarOpen=${sidebarOpen} 
                 setSidebarOpen=${setSidebarOpen} 
+                sidebarCollapsed=${sidebarCollapsed}
                 darkMode=${darkMode} 
                 setDarkMode=${setDarkMode} 
                 onToggleSidebar=${toggleSidebar}
@@ -273,14 +274,8 @@ const ChatApp = () => {
             <main className=${`chat-main ${messages.length > 0 ? 'active' : ''}`}>
                 <div className="chat-topbar">
                     <div className="topbar-left">
-                        <button className="menu-toggle" onClick=${() => {
-                            if (window.innerWidth <= 768) {
-                                setSidebarOpen(!sidebarOpen);
-                            } else {
-                                setSidebarCollapsed(!sidebarCollapsed);
-                            }
-                        }} title="Toggle sidebar">
-                            <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "PanelLeftClose"} size=${20} ><//>
+                        <button className="menu-toggle" onClick=${() => setSidebarOpen(!sidebarOpen)} title="Toggle sidebar">
+                            <${Icon} name="Menu" size=${20} ><//>
                         </button>
                     </div>
                     <button className="theme-btn" onClick=${() => setDarkMode(!darkMode)}>
