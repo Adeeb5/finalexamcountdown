@@ -324,12 +324,6 @@ class Handler(SimpleHTTPRequestHandler):
                     text_val = msg.get("content", "").strip()
                     if not text_val:
                         continue
-                    if not contents and role == "model":
-                        continue
-                    contents.append({
-                        "role": role,
-                        "parts": [{"text": text_val}]
-                    })
 
                 system_instruction = (
                     "You are 'Finals+ AI', a highly personalized academic tutor and study assistant for UiTM students. "
@@ -338,7 +332,6 @@ class Handler(SimpleHTTPRequestHandler):
                     "For example: 'Saya tengok exam CSC128 awake lagi 12 hari. Jom kita study programming!' or 'MAT112 tinggal 5 hari lagi, nak buat flashcards?' "
                     "Focus strictly on final exam preparation, active recall tips, summarizing topics, and study schedules. "
                     "Keep your responses concise, focused, and direct. Limit responses to a maximum of 2-3 paragraphs or bullet lists to ensure fast loading times. "
-                    "CRITICAL: Do NOT use the words 'stres' or 'stress' in your responses (to avoid triggering safety API filters). Instead, use 'tekanan belajar', 'relaks', 'ketenangan', or 'tenang'. "
                     "Do NOT discuss holiday schedules or vacations unless asked about study timelines. "
                     "Reply naturally in a mix of Malay and English (Bahasa Melayu / Manglish / Santai) that UiTM students typically use. "
                     "Be supportive, encouraging, and highly conversational. Use formatting like bullet points or bold text to make it readable.\n\n"
@@ -355,133 +348,37 @@ class Handler(SimpleHTTPRequestHandler):
                         system_instruction += f"- Code: {exam.get('code')}, Subject: {exam.get('subjectName') or 'N/A'}, Date: {exam.get('dateStr') or 'N/A'}, Location: {exam.get('location') or 'N/A'}\n"
                     system_instruction += "\n"
 
-                # 1. Custom OpenAI Provider Routing
-                if custom_provider == 'openai' and custom_key.strip():
-                    openai_messages = [{"role": "system", "content": system_instruction}]
-                    for h_msg in history:
-                        role = "assistant" if h_msg.get("role") == "model" else "user"
-                        openai_messages.append({"role": role, "content": h_msg.get("content", "")})
-                    openai_messages.append({"role": "user", "content": msg})
-                    
-                    req_data = {
-                        "model": "gpt-4o-mini",
-                        "messages": openai_messages,
-                        "max_tokens": 800
-                    }
-                    
-                    url = 'https://api.openai.com/v1/chat/completions'
-                    req = Request(
-                        url,
-                        data=json.dumps(req_data).encode('utf-8'),
-                        headers={
-                            'Content-Type': 'application/json',
-                            'Authorization': f'Bearer {custom_key.strip()}'
-                        }
-                    )
-                    try:
-                        opener = make_opener()
-                        with opener.open(req, timeout=9) as resp:
-                            resp_data = json.loads(resp.read().decode('utf-8'))
-                            reply = resp_data['choices'][0]['message']['content']
-                            self.send_json(200, {'reply': reply})
-                            return
-                    except Exception as e:
-                        self.send_json(500, {'error': f'OpenAI API Error: {str(e)}'})
-                        return
-
-                # 2. Check if Groq is available as default or chosen specifically
-                groq_key = os.environ.get('GROQ_API_KEY')
-                if (custom_provider == 'default' and groq_key) or (custom_provider == 'groq'):
-                    api_key = custom_key.strip() if custom_key.strip() else groq_key
-                    if not api_key:
-                        self.send_json(400, {'error': 'GROQ_API_KEY is not configured on the server. Please add it to your environment variables.'})
-                        return
-
-                    groq_messages = [{"role": "system", "content": system_instruction}]
-                    for h_msg in history:
-                        role = "assistant" if h_msg.get("role") == "model" else "user"
-                        groq_messages.append({"role": role, "content": h_msg.get("content", "")})
-                    groq_messages.append({"role": "user", "content": msg})
-
-                    req_data = {
-                        "model": "llama-3.3-70b-specdec",
-                        "messages": groq_messages,
-                        "max_tokens": 800
-                    }
-
-                    url = 'https://api.groq.com/openai/v1/chat/completions'
-                    req = Request(
-                        url,
-                        data=json.dumps(req_data).encode('utf-8'),
-                        headers={
-                            'Content-Type': 'application/json',
-                            'Authorization': f'Bearer {api_key}'
-                        }
-                    )
-                    try:
-                        opener = make_opener()
-                        with opener.open(req, timeout=9) as resp:
-                            resp_data = json.loads(resp.read().decode('utf-8'))
-                            reply = resp_data['choices'][0]['message']['content']
-                            self.send_json(200, {'reply': reply})
-                            return
-                    except Exception as e:
-                        self.send_json(500, {'error': f'Groq API Error: {str(e)}'})
-                        return
-
-                # 3. Gemini Provider Routing (Custom or Default Key)
-                api_key = custom_key.strip() if (custom_provider == 'gemini' and custom_key.strip()) else os.environ.get('GEMINI_API_KEY')
+                api_key = os.environ.get('GROQ_API_KEY')
                 if not api_key:
-                    self.send_json(400, {'error': 'Neither GROQ_API_KEY nor GEMINI_API_KEY is configured on the server.'})
+                    self.send_json(400, {'error': 'GROQ_API_KEY is not configured on the server. Please add it to your environment variables.'})
                     return
-                
-                contents = []
+
+                groq_messages = [{"role": "system", "content": system_instruction}]
                 for h_msg in history:
-                    role = "user" if h_msg.get("role") == "user" else "model"
-                    text_val = h_msg.get("content", "").strip()
-                    if not text_val:
-                        continue
-                    if not contents and role == "model":
-                        continue
-                    contents.append({
-                        "role": role,
-                        "parts": [{"text": text_val}]
-                    })
-                contents.append({
-                    "role": "user",
-                    "parts": [{"text": msg}]
-                })
-                
+                    role = "assistant" if h_msg.get("role") == "model" else "user"
+                    groq_messages.append({"role": role, "content": h_msg.get("content", "")})
+                groq_messages.append({"role": "user", "content": msg})
+
                 req_data = {
-                    "contents": contents,
-                    "systemInstruction": {
-                        "parts": [{"text": system_instruction}]
-                    },
-                    "generationConfig": {
-                        "maxOutputTokens": 800
-                    },
-                    "safetySettings": [
-                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-                        {"category": "HARM_CATEGORY_CIVIC_INTEGRITY", "threshold": "BLOCK_NONE"}
-                    ]
+                    "model": "llama-3.3-70b-specdec",
+                    "messages": groq_messages,
+                    "max_tokens": 800
                 }
-                
-                req_body = json.dumps(req_data).encode('utf-8')
-                url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}'
+
+                url = 'https://api.groq.com/openai/v1/chat/completions'
                 req = Request(
                     url,
-                    data=req_body,
-                    headers={'Content-Type': 'application/json'}
+                    data=json.dumps(req_data).encode('utf-8'),
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {api_key}'
+                    }
                 )
-                
                 try:
                     opener = make_opener()
                     with opener.open(req, timeout=9) as resp:
                         resp_data = json.loads(resp.read().decode('utf-8'))
-                        reply = resp_data['candidates'][0]['content']['parts'][0]['text']
+                        reply = resp_data['choices'][0]['message']['content']
                         self.send_json(200, {'reply': reply})
                 except Exception as e:
                     import traceback
@@ -490,10 +387,13 @@ class Handler(SimpleHTTPRequestHandler):
                     if hasattr(e, 'read'):
                         try:
                             error_body = e.read().decode('utf-8', errors='replace')
-                            error_json = json.loads(error_body)
-                            if 'error' in error_json and 'message' in error_json['error']:
-                                error_msg = f"{e} - {error_json['error']['message']}"
-                            else:
+                            try:
+                                error_json = json.loads(error_body)
+                                if 'error' in error_json and 'message' in error_json['error']:
+                                    error_msg = f"{e} - {error_json['error']['message']}"
+                                else:
+                                    error_msg = f"{e} - {error_body}"
+                            except Exception:
                                 error_msg = f"{e} - {error_body}"
                         except Exception:
                             pass
