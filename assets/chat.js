@@ -136,14 +136,6 @@ const ChatApp = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
-    const toggleSidebar = () => {
-        if (window.innerWidth <= 768) {
-            setSidebarOpen(!sidebarOpen);
-        } else {
-            setSidebarCollapsed(!sidebarCollapsed);
-        }
-    };
-
     const feedEndRef = useRef(null);
     const textareaRef = useRef(null);
 
@@ -275,12 +267,12 @@ const ChatApp = () => {
                     <div className="topbar-left">
                         <button className="menu-toggle" onClick=${() => {
                             if (window.innerWidth <= 768) {
-                                setSidebarOpen(true);
+                                setSidebarOpen(!sidebarOpen);
                             } else {
                                 setSidebarCollapsed(!sidebarCollapsed);
                             }
                         }} title="Toggle sidebar">
-                            <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "Menu"} size=${20} ><//>
+                            <${Icon} name=${sidebarCollapsed ? "PanelLeft" : "PanelLeftClose"} size=${20} ><//>
                         </button>
                     </div>
                     <button className="theme-btn" onClick=${() => setDarkMode(!darkMode)}>
@@ -292,17 +284,6 @@ const ChatApp = () => {
                     ${messages.length === 0 ? html`
                         <div className="welcome-container">
                             <h1 className="welcome-title">What can I help with?</h1>
-                            
-                            ${renderInputBox()}
-
-                            <div className="suggestions-row">
-                                ${suggestions.map(s => html`
-                                    <button className="suggestion-pill" key=${s.title} onClick=${() => triggerSuggestion(s.query)}>
-                                        <${Icon} name=${s.icon} size=${14} ><//>
-                                        ${s.title}
-                                    </button>
-                                `)}
-                            </div>
                         </div>
                     ` : html`
                         <div className="chat-feed">
@@ -335,14 +316,24 @@ const ChatApp = () => {
                     `}
                 </div>
 
-                ${messages.length > 0 ? html`
-                    <div className="chat-input-container">
-                        ${renderInputBox()}
+                <div className="chat-input-container">
+                    ${renderInputBox()}
+                    
+                    ${messages.length === 0 ? html`
+                        <div className="suggestions-row">
+                            ${suggestions.map(s => html`
+                                <button className="suggestion-pill" key=${s.title} onClick=${() => triggerSuggestion(s.query)}>
+                                    <${Icon} name=${s.icon} size=${14} ><//>
+                                    ${s.title}
+                                </button>
+                            `)}
+                        </div>
+                    ` : html`
                         <div className="chat-disclaimer">
                             Finals+ AI boleh membuat kesilapan. Sila semak jadual dan venue exam rasmi anda.
                         </div>
-                    </div>
-                ` : null}
+                    `}
+                </div>
             </main>
         </div>
     `;
