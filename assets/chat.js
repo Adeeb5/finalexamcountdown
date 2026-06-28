@@ -82,7 +82,7 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
             </div>
 
             <button className="new-chat-btn" onClick=${onNewChat}>
-                <${Icon} name="Plus" size=${16} />
+                <${Icon} name="Plus" size=${16} ><//>
                 New Chat
             </button>
 
@@ -109,11 +109,11 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
 
             <div className="sidebar-footer">
                 <a className="sidebar-link" href="/">
-                    <${Icon} name="Home" size=${16} />
+                    <${Icon} name="Home" size=${16} ><//>
                     Back to Home
                 </a>
                 <div className="sidebar-link" onClick=${() => setDarkMode(!darkMode)}>
-                    <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${16} />
+                    <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${16} ><//>
                     ${darkMode ? 'Light Mode' : 'Dark Mode'}
                 </div>
             </div>
@@ -227,11 +227,11 @@ const ChatApp = () => {
                 <div className="chat-topbar">
                     <div className="topbar-left">
                         <button className="menu-toggle" onClick=${() => setSidebarOpen(true)}>
-                            <${Icon} name="Menu" size=${20} />
+                            <${Icon} name="Menu" size=${20} ><//>
                         </button>
                     </div>
                     <button className="theme-btn" onClick=${() => setDarkMode(!darkMode)}>
-                        <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${20} />
+                        <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${20} ><//>
                     </button>
                 </div>
 
@@ -299,7 +299,7 @@ const ChatApp = () => {
                             disabled=${loading}
                         />
                         <button className="send-btn" onClick=${() => handleSend()} disabled=${loading || !input.trim()}>
-                            <${Icon} name="Send" size=${16} />
+                            <${Icon} name="Send" size=${16} ><//>
                         </button>
                     </div>
                     <div className="chat-disclaimer">
