@@ -503,9 +503,9 @@ class Handler(SimpleHTTPRequestHandler):
                     except Exception as e:
                         return f"Scrape error: {str(e)}"
 
-                api_key = os.environ.get('GROQ_API_KEY')
+                api_key = os.environ.get('ILMU_API_KEY')
                 if not api_key:
-                    self.send_json(400, {'error': 'GROQ_API_KEY is not configured on the server. Please add it to your environment variables.'})
+                    self.send_json(400, {'error': 'ILMU_API_KEY is not configured on the server. Please add it to your environment variables.'})
                     return
 
                 groq_messages = [{"role": "system", "content": system_instruction}]
@@ -551,12 +551,12 @@ class Handler(SimpleHTTPRequestHandler):
                     }
                 }
 
-                url = 'https://api.groq.com/openai/v1/chat/completions'
+                url = 'https://api.ilmu.ai/v1/chat/completions'
                 
                 # Perform the agentic loop (up to 6 iterations for tool calls)
                 for _ in range(6):
                     req_data = {
-                        "model": "qwen/qwen3-32b",
+                        "model": "ilmu-v3.1",
                         "messages": groq_messages,
                         "tools": [search_tool, scrape_tool],
                         "tool_choice": "auto",
@@ -575,7 +575,7 @@ class Handler(SimpleHTTPRequestHandler):
                     
                     try:
                         opener = make_opener()
-                        with opener.open(req, timeout=12) as resp:
+                        with opener.open(req, timeout=30) as resp:
                             resp_data = json.loads(resp.read().decode('utf-8'))
                             choice = resp_data['choices'][0]
                             message = choice['message']
@@ -619,9 +619,9 @@ class Handler(SimpleHTTPRequestHandler):
                                             "content": trimmed_res
                                         })
                                 
-                                # Introduce a short delay to stay under Tokens/Requests Per Minute (TPM/RPM) rate limits
+                                # Small delay between tool-call iterations
                                 import time
-                                time.sleep(2.5)
+                                time.sleep(0.5)
                                 
                                 # Continue loop to get final text response from the model
                                 continue
