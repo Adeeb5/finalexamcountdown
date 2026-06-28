@@ -2,11 +2,19 @@ const { useEffect, useState, useRef } = React;
 const html = htm.bind(React.createElement);
 
 const STORAGE_KEY = 'uitm-final-exams-v1';
-const MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+const CHAT_STORAGE_KEY = 'uitm-chat-session-v1';
 
 function loadStoredExams() {
     try {
         return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function loadChatSession() {
+    try {
+        return JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '[]');
     } catch {
         return [];
     }
@@ -38,10 +46,8 @@ function renderMarkdown(text) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
     
-    // Bold **text**
     htmlStr = htmlStr.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
-    // List bullet points * or -
     const lines = htmlStr.split('\n');
     let inList = false;
     const processedLines = lines.map(line => {
@@ -76,14 +82,14 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
                     <img src="/assets/logo-icon.png" alt="F+" />
                     Finals+ AI
                 </span>
-                <button className="theme-btn menu-toggle" onClick=${() => setSidebarOpen(false)}>
-                    <${Icon} name="X" size=${20} ><//>
+                <button className="sidebar-toggle-btn" onClick=${() => setSidebarOpen(false)}>
+                    <${Icon} name="X" size=${18} ><//>
                 </button>
             </div>
 
             <button className="new-chat-btn" onClick=${onNewChat}>
-                <${Icon} name="Plus" size=${16} ><//>
-                New Chat
+                <span>New Chat</span>
+                <${Icon} name="SquarePen" size=${16} ><//>
             </button>
 
             <div className="sidebar-content">
@@ -92,7 +98,7 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
                     ${exams.length ? exams.map(exam => html`
                         <div className="sidebar-exam-card" key=${exam.code}>
                             <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span className="sidebar-exam-code">${exam.code}</span>
+                                <strong className="sidebar-exam-code">${exam.code}</strong>
                                 <span style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>
                                     ${calculateDaysLeft(exam.dateStr)}
                                 </span>
@@ -100,7 +106,7 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
                             <div className="sidebar-exam-date">${formatDate(exam.dateStr)} - ${exam.location}</div>
                         </div>
                     `) : html`
-                        <div style=${{ fontSize: '13px', color: 'var(--muted)', textAlign: 'center', padding: '12px' }}>
+                        <div style=${{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', padding: '12px', border: '1px dashed var(--line)', borderRadius: '6px' }}>
                             No exams loaded. Import timetable on home page to show timers here.
                         </div>
                     `}
@@ -123,7 +129,7 @@ const Sidebar = ({ exams, onNewChat, sidebarOpen, setSidebarOpen, darkMode, setD
 
 const ChatApp = () => {
     const [exams] = useState(loadStoredExams);
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState(loadChatSession);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -143,6 +149,7 @@ const ChatApp = () => {
     }, [darkMode]);
 
     useEffect(() => {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
         if (feedEndRef.current) {
             feedEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
@@ -206,11 +213,41 @@ const ChatApp = () => {
     };
 
     const suggestions = [
-        { title: "Tips Ulangkaji", desc: "Bagaimana cara ulangkaji yang berkesan untuk subjek susah?", query: "Bagi tips study last minute untuk subjek yang susah" },
-        { title: "Jadual Belajar", desc: "Bantu saya buat perancangan study mengikut tarikh exam", query: "Macam mana nak rancang jadual study mengikut tarikh exam saya?" },
-        { title: "Atasi Stres", desc: "Cadangan cara kurangkan nervous sebelum masuk dewan peperiksaan", query: "Cadangkan cara atasi stres exam" },
-        { title: "Uji Kefahaman", desc: "Buat kuiz ringkas untuk menguji tahap hafalan topik", query: "Buatkan kuiz ringkas untuk bantu saya hafal subjek saya" }
+        { title: "Tips study", icon: "BookOpen", query: "Bagi tips study last minute untuk subjek yang susah" },
+        { title: "Rancang jadual", icon: "Calendar", query: "Macam mana nak rancang jadual study mengikut tarikh exam saya?" },
+        { title: "Atasi stres", icon: "Smile", query: "Cadangkan cara atasi stres exam" },
+        { title: "Buat kuiz", icon: "HelpCircle", query: "Buatkan kuiz ringkas untuk bantu saya hafal subjek saya" }
     ];
+
+    const renderInputBox = () => html`
+        <div className="chat-input-wrapper">
+            <div className="chat-input-left" title="Attachment (disabled)">
+                <${Icon} name="Plus" size=${18} ><//>
+            </div>
+            <textarea 
+                ref=${textareaRef}
+                value=${input}
+                onChange=${handleTextareaChange}
+                onKeyDown=${e => {
+                    if (e.key === 'Enter' && !e.shiftKey && !loading) {
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }}
+                placeholder="Ask anything..." 
+                rows="1"
+                disabled=${loading}
+            />
+            <div className="chat-input-actions">
+                <button className="mic-btn" type="button" title="Voice input (disabled)">
+                    <${Icon} name="Mic" size=${16} ><//>
+                </button>
+                <button className="send-btn" onClick=${() => handleSend()} disabled=${loading || !input.trim()}>
+                    <${Icon} name="ArrowUp" size=${16} ><//>
+                </button>
+            </div>
+        </div>
+    `;
 
     return html`
         <div className="chat-app">
@@ -220,10 +257,10 @@ const ChatApp = () => {
                 sidebarOpen=${sidebarOpen} 
                 setSidebarOpen=${setSidebarOpen} 
                 darkMode=${darkMode} 
-                setDarkMode=${setDarkMode}
+                setDarkMode=${setDarkMode} 
             ><//>
 
-            <main className="chat-main">
+            <main className=${`chat-main ${messages.length > 0 ? 'active' : ''}`}>
                 <div className="chat-topbar">
                     <div className="topbar-left">
                         <button className="menu-toggle" onClick=${() => setSidebarOpen(true)}>
@@ -238,16 +275,16 @@ const ChatApp = () => {
                 <div className="chat-feed-wrapper">
                     ${messages.length === 0 ? html`
                         <div className="welcome-container">
-                            <img className="welcome-logo" src="/assets/logo.png" alt="Finals+" />
-                            <h1 className="welcome-title">Bagaimana saya boleh bantu anda study hari ini?</h1>
-                            <p className="welcome-subtitle">Tanya tentang tips ulangkaji, pengurusan masa exam, atasi stres, atau minta AI tolong rancang jadual belajar anda.</p>
+                            <h1 className="welcome-title">What can I help with?</h1>
                             
-                            <div className="suggestions-grid">
+                            ${renderInputBox()}
+
+                            <div className="suggestions-row">
                                 ${suggestions.map(s => html`
-                                    <div className="suggestion-card" key=${s.title} onClick=${() => triggerSuggestion(s.query)}>
-                                        <div className="suggestion-card-title">${s.title}</div>
-                                        <div className="suggestion-card-desc">${s.desc}</div>
-                                    </div>
+                                    <button className="suggestion-pill" key=${s.title} onClick=${() => triggerSuggestion(s.query)}>
+                                        <${Icon} name=${s.icon} size=${14} ><//>
+                                        ${s.title}
+                                    </button>
                                 `)}
                             </div>
                         </div>
@@ -258,9 +295,9 @@ const ChatApp = () => {
                                     <div key=${index} className="system-error-bubble">${msg.content}</div>
                                 ` : html`
                                     <div key=${index} className=${`message-row ${msg.role}`}>
-                                        <div className="avatar">
-                                            ${msg.role === 'user' ? 'Me' : 'AI'}
-                                        </div>
+                                        ${msg.role === 'model' ? html`
+                                            <div className="avatar">AI</div>
+                                        ` : null}
                                         <div className="bubble" dangerouslySetInnerHTML=${{ __html: renderMarkdown(msg.content) }} />
                                     </div>
                                 `}
@@ -282,30 +319,14 @@ const ChatApp = () => {
                     `}
                 </div>
 
-                <div className="chat-input-container">
-                    <div className="chat-input-wrapper">
-                        <textarea 
-                            ref=${textareaRef}
-                            value=${input}
-                            onChange=${handleTextareaChange}
-                            onKeyDown=${e => {
-                                if (e.key === 'Enter' && !e.shiftKey && !loading) {
-                                    e.preventDefault();
-                                    handleSend();
-                                }
-                            }}
-                            placeholder="Tanya tentang ulangkaji, jadual study, tips exam..." 
-                            rows="1"
-                            disabled=${loading}
-                        />
-                        <button className="send-btn" onClick=${() => handleSend()} disabled=${loading || !input.trim()}>
-                            <${Icon} name="Send" size=${16} ><//>
-                        </button>
+                ${messages.length > 0 ? html`
+                    <div className="chat-input-container">
+                        ${renderInputBox()}
+                        <div className="chat-disclaimer">
+                            Finals+ AI boleh membuat kesilapan. Sila semak jadual dan venue exam rasmi anda di Student Portal UiTM.
+                        </div>
                     </div>
-                    <div className="chat-disclaimer">
-                        Finals+ AI boleh membuat kesilapan. Sila semak jadual dan venue exam rasmi anda di Student Portal UiTM.
-                    </div>
-                </div>
+                ` : null}
             </main>
         </div>
     `;

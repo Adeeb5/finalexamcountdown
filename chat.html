@@ -17,13 +17,12 @@
             --royal: #36266c;
             --navy: #20356b;
             --gold: #ffc94e;
-            --ink: #1f2433;
-            --muted: #5f5870;
-            --soft: #f4f2fa;
+            --ink: #0d0d0d;
+            --muted: #676767;
+            --soft: #f4f4f4;
             --surface: #ffffff;
-            --surface-card: #f9f9fb;
-            --ink-lead: #342d48;
-            --line: rgba(31, 36, 51, 0.08);
+            --surface-card: #f9f9f9;
+            --line: rgba(0, 0, 0, 0.08);
             --danger: #b42318;
             --success: #067647;
             --font-display: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -31,15 +30,14 @@
         }
 
         body.dark-mode {
-            --surface: #0b0e14;
-            --surface-card: #151922;
-            --ink: #f4f2fa;
-            --soft: #1d222e;
-            --muted: #958ea3;
+            --surface: #212121;
+            --surface-card: #171717;
+            --ink: #ececec;
+            --soft: #2f2f2f;
+            --muted: #b4b4b4;
             --line: rgba(255, 255, 255, 0.08);
             --indigo: #788bfc;
             --purple: #9a8bfc;
-            --ink-lead: #d0c9e3;
         }
 
         * { box-sizing: border-box; }
@@ -67,65 +65,79 @@
             position: relative;
         }
 
-        /* Sidebar Styling */
+        /* Sidebar Styling (Clean Gray ChatGPT layout) */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: var(--surface-card);
             border-right: 1px solid var(--line);
             display: flex;
             flex-direction: column;
             height: 100%;
             flex-shrink: 0;
-            transition: transform 0.25s ease-in-out;
+            transition: transform 0.2s ease-in-out;
             z-index: 10;
         }
 
         .sidebar-header {
-            padding: 16px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid var(--line);
         }
 
         .sidebar-brand {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             font-family: var(--font-display);
         }
 
         .sidebar-brand img {
-            height: 24px;
+            height: 22px;
         }
 
-        .new-chat-btn {
-            margin: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid var(--line);
-            background: var(--surface);
-            color: var(--ink);
-            font-weight: 600;
+        .sidebar-toggle-btn {
+            background: none;
+            border: none;
             cursor: pointer;
+            color: var(--muted);
+            padding: 6px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: background 150ms ease, border-color 150ms ease;
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--soft);
+            color: var(--ink);
+        }
+
+        .new-chat-btn {
+            margin: 8px 16px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--ink);
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 150ms ease;
         }
         .new-chat-btn:hover {
             background: var(--soft);
-            border-color: var(--indigo);
         }
 
         /* Saved Exams Widget inside Sidebar */
         .sidebar-content {
             flex: 1;
             overflow-y: auto;
-            padding: 0 16px 16px;
+            padding: 8px 16px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -137,50 +149,51 @@
             letter-spacing: 0.05em;
             color: var(--muted);
             font-weight: 700;
-            margin: 8px 0;
+            margin-bottom: 8px;
         }
 
         .sidebar-exam-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .sidebar-exam-card {
-            padding: 10px 12px;
+            padding: 8px 10px;
             background: var(--surface);
             border: 1px solid var(--line);
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 12.5px;
         }
 
         .sidebar-exam-code {
             font-weight: 700;
             color: var(--indigo);
-            margin: 0 0 2px;
         }
 
         .sidebar-exam-date {
             color: var(--muted);
             font-size: 11px;
+            margin-top: 2px;
         }
 
         .sidebar-footer {
-            padding: 16px;
+            padding: 12px 16px;
             border-top: 1px solid var(--line);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
         }
 
         .sidebar-link {
-            padding: 10px 12px;
+            padding: 8px 10px;
             border-radius: 6px;
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 14px;
+            font-size: 13.5px;
             cursor: pointer;
+            color: var(--ink);
             transition: background 150ms ease;
         }
         .sidebar-link:hover {
@@ -195,6 +208,7 @@
             height: 100%;
             background: var(--surface);
             overflow: hidden;
+            position: relative;
         }
 
         /* Top bar for mobile toggle and theme button */
@@ -204,8 +218,12 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 16px;
-            border-bottom: 1px solid var(--line);
             flex-shrink: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 8;
         }
 
         .topbar-left {
@@ -218,7 +236,7 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: var(--ink);
+            color: var(--muted);
             padding: 8px;
             border-radius: 6px;
             display: flex;
@@ -227,6 +245,7 @@
         }
         .menu-toggle:hover, .theme-btn:hover {
             background: var(--soft);
+            color: var(--ink);
         }
 
         .menu-toggle {
@@ -245,13 +264,13 @@
 
         .chat-feed {
             width: min(720px, 100% - 32px);
-            padding: 32px 0 100px;
+            padding: 72px 0 120px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 28px;
         }
 
-        /* Message Bubbles - OpenAI Style */
+        /* Message Rows - ChatGPT Clean Style */
         .message-row {
             display: flex;
             gap: 16px;
@@ -259,12 +278,12 @@
         }
 
         .message-row.user {
-            flex-direction: row-reverse;
+            justify-content: flex-end;
         }
 
         .avatar {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             background: var(--soft);
             display: flex;
@@ -272,20 +291,18 @@
             justify-content: center;
             flex-shrink: 0;
             color: var(--indigo);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
         }
 
         .message-row.user .avatar {
             background: var(--indigo);
             color: #ffffff;
+            display: none; /* Hide user avatar for extra clean look like new ChatGPT */
         }
 
         .bubble {
-            flex: 1;
-            max-width: calc(100% - 48px);
-            padding: 12px 16px;
-            border-radius: 8px;
+            max-width: 82%;
             font-size: 15px;
             line-height: 1.6;
             word-break: break-word;
@@ -294,19 +311,19 @@
         .message-row.user .bubble {
             background: var(--soft);
             color: var(--ink);
-            border-top-right-radius: 0;
+            padding: 10px 16px;
+            border-radius: 20px;
         }
 
         .message-row.model .bubble {
             background: transparent;
             color: var(--ink);
-            padding-left: 0;
-            padding-right: 0;
+            flex: 1;
         }
 
-        .bubble p { margin: 0 0 12px 0; }
+        .bubble p { margin: 0 0 10px 0; }
         .bubble p:last-child { margin-bottom: 0; }
-        .bubble ul, .bubble ol { margin: 0 0 12px 0; padding-left: 20px; }
+        .bubble ul, .bubble ol { margin: 0 0 10px 0; padding-left: 20px; }
         .bubble li { margin-bottom: 4px; }
 
         .system-error-bubble {
@@ -314,9 +331,9 @@
             background: #fff1ee;
             color: #7a271a;
             border: 1px solid #ffd6d0;
-            padding: 12px 18px;
+            padding: 10px 16px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13.5px;
             width: 100%;
             text-align: center;
         }
@@ -348,79 +365,58 @@
             40% { transform: scale(1.0); }
         }
 
-        /* Welcome Page / Suggestion Cards Grid */
+        /* Welcome Page / ChatGPT Style Center Input */
         .welcome-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            min-height: 400px;
+            width: min(720px, 100% - 32px);
+            margin: auto 0;
             padding: 40px 0;
-        }
-
-        .welcome-logo {
-            height: 44px;
-            margin-bottom: 16px;
         }
 
         .welcome-title {
             font-family: var(--font-display);
             font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
         }
 
-        .welcome-subtitle {
-            color: var(--muted);
-            font-size: 16px;
-            margin-bottom: 36px;
-            max-width: 480px;
-            line-height: 1.4;
+        /* Pill suggestions below center input */
+        .suggestions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+            justify-content: center;
         }
 
-        .suggestions-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            width: 100%;
-            max-width: 680px;
-        }
-
-        .suggestion-card {
-            background: var(--surface-card);
+        .suggestion-pill {
+            background: transparent;
             border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 16px;
-            text-align: left;
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--muted);
             cursor: pointer;
-            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
         }
-        .suggestion-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--indigo);
+        .suggestion-pill:hover {
+            border-color: var(--ink);
             background: var(--soft);
-        }
-
-        .suggestion-card-title {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 4px;
             color: var(--ink);
         }
 
-        .suggestion-card-desc {
-            font-size: 12.5px;
-            color: var(--muted);
-            line-height: 1.4;
-        }
-
-        /* Bottom Floating Input Box */
+        /* Large Pill Input Box (ChatGPT Style) */
         .chat-input-container {
-            position: absolute;
-            bottom: 0;
-            left: 280px; /* Width of sidebar */
-            right: 0;
+            width: 100%;
             padding: 24px;
             background: linear-gradient(180deg, transparent, var(--surface) 40%);
             display: flex;
@@ -428,7 +424,14 @@
             align-items: center;
             flex-shrink: 0;
             z-index: 5;
-            transition: left 0.25s ease-in-out;
+        }
+
+        /* absolute bottom position only when chat is active */
+        .chat-main.active .chat-input-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
         }
 
         .chat-input-wrapper {
@@ -436,12 +439,30 @@
             position: relative;
             background: var(--surface-card);
             border: 1px solid var(--line);
-            border-radius: 12px;
-            padding: 10px 14px;
-            box-shadow: rgba(0,0,0,0.04) 0 4px 20px;
+            border-radius: 28px;
+            padding: 10px 14px 10px 20px;
             display: flex;
             align-items: center;
             gap: 12px;
+            box-shadow: rgba(0, 0, 0, 0.02) 0 4px 12px;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+        .chat-input-wrapper:focus-within {
+            border-color: rgba(0, 0, 0, 0.2);
+            box-shadow: rgba(0, 0, 0, 0.05) 0 4px 20px;
+        }
+        .dark-mode .chat-input-wrapper:focus-within {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-input-left {
+            display: flex;
+            align-items: center;
+            color: var(--muted);
+            cursor: pointer;
+        }
+        .chat-input-left:hover {
+            color: var(--ink);
         }
 
         .chat-input-wrapper textarea {
@@ -461,26 +482,54 @@
             color: var(--muted);
         }
 
-        .send-btn {
-            background: var(--indigo);
+        .chat-input-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mic-btn {
+            background: none;
             border: none;
-            color: #ffffff;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mic-btn:hover {
+            background: var(--soft);
+            color: var(--ink);
+        }
+
+        .send-btn {
+            background: var(--ink);
+            border: none;
+            color: var(--surface);
             width: 32px;
             height: 32px;
-            border-radius: 8px;
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: background 150ms ease, opacity 150ms ease;
+            transition: opacity 150ms ease, background 150ms ease;
+        }
+        .dark-mode .send-btn {
+            background: #ffffff;
+            color: #0d0d0d;
         }
         .send-btn:hover {
-            background: var(--purple);
+            opacity: 0.9;
         }
         .send-btn:disabled {
-            opacity: 0.5;
+            background: var(--soft);
+            color: var(--muted);
             cursor: not-allowed;
+            opacity: 1;
         }
 
         .chat-disclaimer {
@@ -499,21 +548,11 @@
             .sidebar.open {
                 transform: translateX(0);
             }
-            .chat-input-container {
-                left: 0 !important;
-            }
             .menu-toggle {
                 display: flex;
             }
-            .suggestions-grid {
-                grid-template-columns: 1fr;
-            }
             .welcome-title {
                 font-size: 26px;
-            }
-            .welcome-subtitle {
-                font-size: 14px;
-                margin-bottom: 24px;
             }
         }
     </style>
