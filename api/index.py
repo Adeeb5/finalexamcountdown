@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
-# Force rebuild 18: resolve tool_use_failed Bad Request error on Groq API
+# Force rebuild 19: fix tool call assistant message serialization
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.
