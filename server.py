@@ -591,7 +591,7 @@ class Handler(SimpleHTTPRequestHandler):
                                 
                                 assistant_msg = {
                                     "role": "assistant",
-                                    "content": message.get('content') or None,
+                                    "content": message.get('content') or "",
                                     "tool_calls": valid_calls
                                 }
                                 groq_messages.append(assistant_msg)
