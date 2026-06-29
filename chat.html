@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com https://api.ilmu.ai; font-src 'self' data:;">
+    <title>Finals+ AI | Chat Study Assistant</title>
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <script crossorigin="anonymous" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js" integrity="sha384-toVdrLSMaw7Y55MowcKqkmFL/Ek6Sky62NOk0b5sDDZBu2wcoPyyQUt9unDVjXhL"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" integrity="sha384-uTYyvsSSUZeaPhb5RbKlQa0zY/WpX/QHfvg2mczXyBQOpkWPEDy9lczyp+w7SKXu"></script>
+    <style>
+        :root {
+            --indigo: #3f51b5;
+            --purple: #5640a6;
+            --royal: #36266c;
+            --navy: #20356b;
+            --gold: #ffc94e;
+            --ink: #1f2433;
+            --muted: #5f5870;
+            --soft: #f4f2fa;
+            --surface: #ffffff;
+            --surface-card: #f9f9fb;
+            --ink-lead: #342d48;
+            --line: rgba(31, 36, 51, 0.08);
+            --danger: #b42318;
+            --success: #067647;
+            --font-display: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-text: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body.dark-mode {
+            --surface: #0b0e14;
+            --surface-card: #151922;
+            --ink: #f4f2fa;
+            --soft: #1d222e;
+            --muted: #958ea3;
+            --line: rgba(255, 255, 255, 0.08);
+            --indigo: #788bfc;
+            --purple: #9a8bfc;
+            --ink-lead: #d0c9e3;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--surface);
+            font-family: var(--font-text);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: geometricPrecision;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        button, input, textarea, a { font: inherit; }
+        button:disabled { cursor: wait; opacity: 0.7; }
+        a { color: inherit; text-decoration: none; }
+
+        /* Main Layout */
+        .chat-app {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar Styling (Clean Apple-style Panel) */
+        .sidebar {
+            width: 260px;
+            background: var(--surface-card);
+            border-right: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            flex-shrink: 0;
+            transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Collapsed Sidebar Dock Style */
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar.collapsed .sidebar-text,
+        .sidebar.collapsed .sidebar-brand {
+            display: none !important;
+        }
+
+        .sidebar-header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--line);
+            min-height: 52px;
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 14px 0;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: var(--font-display);
+        }
+
+        .sidebar-brand img {
+            height: 22px;
+        }
+
+        .sidebar-toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 150ms ease, color 150ms ease;
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--soft);
+            color: var(--ink);
+        }
+
+        .new-chat-btn {
+            margin: 12px 16px 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--ink);
+            font-weight: 600;
+            font-size: 13.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 150ms ease, border-color 150ms ease;
+        }
+        .new-chat-btn:hover {
+            background: var(--soft);
+            border-color: var(--indigo);
+        }
+
+        .sidebar.collapsed .new-chat-btn {
+            margin: 12px 8px 8px;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            justify-content: center;
+        }
+        .sidebar.collapsed .new-chat-btn:hover {
+            background: var(--soft);
+        }
+
+        /* Saved Exams Widget inside Sidebar */
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar.collapsed .sidebar-content {
+            display: none !important; /* Hide countdown widget when collapsed */
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-exam-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar-exam-card {
+            padding: 8px 10px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            font-size: 12.5px;
+        }
+
+        .sidebar-exam-code {
+            font-weight: 700;
+            color: var(--indigo);
+        }
+
+        .sidebar-exam-date {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .sidebar-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar.collapsed .sidebar-footer {
+            padding: 12px 0;
+            align-items: center;
+        }
+
+        .sidebar-link {
+            padding: 8px 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13.5px;
+            cursor: pointer;
+            color: var(--ink);
+            transition: background 150ms ease;
+        }
+        .sidebar-link:hover {
+            background: var(--soft);
+        }
+
+        .sidebar.collapsed .sidebar-link {
+            justify-content: center;
+            padding: 10px;
+            width: 40px;
+            height: 40px;
+        }
+
+        /* Main Chat Area Container */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: var(--surface);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top bar for mobile toggle and theme button */
+        .chat-topbar {
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 8;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Replaced general topbar toggle button on desktop since sidebar collapse is now a dock toggle */
+        .menu-toggle {
+            display: none !important; /* Managed entirely inside sidebar dock */
+        }
+
+        .theme-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 150ms ease, color 150ms ease;
+        }
+        .theme-btn:hover {
+            background: var(--soft);
+            color: var(--ink);
+        }
+
+        /* Chat Scroll Feed */
+        .chat-feed-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .chat-feed {
+            width: min(720px, 100% - 32px);
+            padding: 72px 0 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        /* Message Rows - Apple Clean Style */
+        .message-row {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--indigo);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .message-row.user .avatar {
+            display: none;
+        }
+
+        .bubble {
+            max-width: 82%;
+            font-size: 15px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .message-row.user .bubble {
+            background: var(--indigo);
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 20px;
+        }
+
+        .message-row.model .bubble {
+            background: transparent;
+            color: var(--ink);
+            flex: 1;
+        }
+
+        .bubble p { margin: 0 0 10px 0; }
+        .bubble p:last-child { margin-bottom: 0; }
+        .bubble ul, .bubble ol { margin: 0 0 10px 0; padding-left: 20px; }
+        .bubble li { margin-bottom: 4px; }
+
+        .system-error-bubble {
+            align-self: center;
+            background: #fff1ee;
+            color: #7a271a;
+            border: 1px solid #ffd6d0;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            width: 100%;
+            text-align: center;
+        }
+        .dark-mode .system-error-bubble {
+            background: #2f1719;
+            color: #ffa299;
+            border-color: #632629;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            padding: 4px 8px;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--muted);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(3) { animation-delay: -0.08s; }
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        /* Welcome Page / Apple Style Center Layout */
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: min(720px, 100% - 32px);
+            margin-top: 15vh;
+            margin-bottom: 12px;
+        }
+
+        .welcome-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--indigo), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Pill suggestions below center input */
+        .suggestions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+            justify-content: center;
+        }
+
+        .suggestion-pill {
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+        }
+        .suggestion-pill:hover {
+            border-color: var(--indigo);
+            background: var(--soft);
+            color: var(--indigo);
+        }
+
+        /* Large Pill Input Box (Apple Style) */
+        .chat-input-container {
+            width: 100%;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 5;
+            transition: margin-top 0.2s ease, padding 0.2s ease;
+        }
+
+        /* Centered welcome state positioning */
+        .chat-main:not(.active) {
+            justify-content: center;
+            align-items: center;
+        }
+        .chat-main:not(.active) .chat-feed-wrapper {
+            flex: none;
+            height: auto;
+        }
+        .chat-main:not(.active) .chat-input-container {
+            margin-top: 0;
+            padding-bottom: 80px;
+        }
+
+        /* Active bottom state positioning */
+        .chat-main.active .chat-input-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent, var(--surface) 40%);
+        }
+
+        .chat-input-wrapper {
+            width: min(720px, 100%);
+            position: relative;
+            background: var(--surface-card);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            padding: 10px 14px 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: rgba(0, 0, 0, 0.02) 0 4px 12px;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+        .chat-input-wrapper:focus-within {
+            border-color: var(--indigo);
+            box-shadow: rgba(63, 81, 181, 0.05) 0 4px 20px;
+        }
+
+
+
+        .chat-input-wrapper textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            height: 24px;
+            max-height: 200px;
+            color: var(--ink);
+            line-height: 24px;
+            padding: 0;
+            outline: none;
+            scrollbar-width: none; /* Hide standard Firefox scrollbar arrows */
+            -ms-overflow-style: none; /* Hide IE scrollbar arrows */
+        }
+        /* Hide Webkit Chrome scrollbar arrows to fix the up/down arrow issue on Windows */
+        .chat-input-wrapper textarea::-webkit-scrollbar {
+            display: none;
+        }
+
+
+
+
+
+        .send-btn {
+            background: var(--indigo);
+            border: none;
+            color: #ffffff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: opacity 150ms ease, background 150ms ease;
+        }
+        .send-btn:hover {
+            background: var(--purple);
+        }
+        .send-btn:disabled {
+            background: var(--soft);
+            color: var(--muted);
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        .chat-disclaimer {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* Mobile Drawer View Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                transform: translateX(-100%);
+                width: 260px !important;
+                margin-left: 0 !important;
+                z-index: 20;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+                width: 260px !important;
+            }
+            .sidebar.collapsed {
+                width: 260px !important; /* Standard drawer size on mobile */
+            }
+            .menu-toggle {
+                display: flex !important; /* Mobile menu hamburger button */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root" style="width: 100%; height: 100%;"></div>
+
+    <script type="module" src="/assets/chat.js"></script>
+</body>
+</html>

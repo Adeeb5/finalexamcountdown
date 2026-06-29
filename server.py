@@ -6,6 +6,7 @@ import html as html_utils
 import json
 import re
 import ssl
+import os
 from http.cookiejar import CookieJar
 
 SIMS_FORM_URL = 'https://simsweb.uitm.edu.my/SPORTAL_APP/exam_schedule/index.htm'
@@ -204,6 +205,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         import os
+        if self.path.split('?')[0] == '/chat':
+            self.path = '/chat.html'
         path = self.translate_path(self.path)
         if not os.path.exists(path) and not self.path.startswith('/api/'):
             self.send_response(404)
@@ -234,6 +237,77 @@ class Handler(SimpleHTTPRequestHandler):
             fields = parse_qs(self.read_post())
             path = self.headers.get('x-vercel-forwarded-path') or self.path
             path = path.split('?')[0]
+
+            if path == '/api/scrape-exam' or path.endswith('/scrape-exam'):
+                course = (fields.get('course', [''])[0] or '').strip().upper()
+                if not course:
+                    self.send_json(400, {'error': 'Course code is required.'})
+                    return
+
+                try:
+                    # Construct HTTP POST request to ptarep search endpoint
+                    url = 'https://exampaper.uitm.edu.my/ptarep/report.php?p=05'
+                    post_data = urlencode({
+                        'course': course,
+                        'fyear': '',
+                        'fsessi': '',
+                        'search': 'Search'
+                    }).encode('utf-8')
+
+                    headers = {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Referer': url,
+                        'Cookie': 'PHPSESSID=403sl5ksf7tu4jh9rdh1nkogs2'
+                    }
+
+                    req = Request(url, data=post_data, headers=headers)
+                    opener = make_opener()
+                    with opener.open(req, timeout=15) as resp:
+                        html_content = resp.read().decode('utf-8', errors='replace')
+
+                    # Parse HTML table rows using regex (Cheerio-style static extraction pattern)
+                    results = []
+                    # Find all table rows
+                    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html_content, flags=re.I | re.S)
+                    for row in rows:
+                        # Extract all cells (td)
+                        cells = re.findall(r'<td[^>]*>(.*?)</td>', row, flags=re.I | re.S)
+                        if len(cells) >= 6:
+                            num = strip_html(cells[0])
+                            # Skip header row if it contains NUM or NUMERICAL indexes
+                            if num.lower() == 'num' or not re.match(r'^\d+\.?$', num):
+                                continue
+                            faculty = strip_html(cells[1])
+                            code = strip_html(cells[2])
+                            name = strip_html(cells[3])
+                            year = strip_html(cells[4])
+                            session = strip_html(cells[5])
+
+                            # Parse out pdf download link from last cell if exists
+                            pdf_url = ''
+                            pdf_match = re.search(r'href=["\'](r3port_055\.php\?[^"\']+)["\']', cells[5], flags=re.I)
+                            if not pdf_match and len(cells) > 6:
+                                pdf_match = re.search(r'href=["\'](r3port_055\.php\?[^"\']+)["\']', cells[6], flags=re.I)
+                            if pdf_match:
+                                pdf_url = 'https://exampaper.uitm.edu.my/ptarep/' + html_utils.unescape(pdf_match.group(1))
+
+                            results.append({
+                                'num': num.replace('.', ''),
+                                'faculty': faculty,
+                                'code': code,
+                                'courseName': name,
+                                'year': year,
+                                'session': session,
+                                'pdfUrl': pdf_url
+                            })
+
+                    self.send_json(200, {'results': results})
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    self.send_json(500, {'error': f'Failed to scrape exam papers: {str(e)}'})
+                return
 
             if path == '/api/exams' or path.endswith('/exams'):
                 codes = parse_codes(fields.get('codes', [''])[0] or fields.get('search_course', [''])[0])
@@ -291,6 +365,316 @@ class Handler(SimpleHTTPRequestHandler):
                             subject['subjectName'] = aims_titles[subject['code']]
                             subject['subjectSource'] = 'AIMS course search'
                 self.send_json(200, {'codes': codes, 'subjects': subjects})
+                return
+
+            elif path == '/api/chat' or path.endswith('/chat'):
+                user_msg = (fields.get('message', [''])[0] or fields.get('query', [''])[0] or '').strip()
+                
+                try:
+                    history_str = fields.get('history', ['[]'])[0]
+                    history = json.loads(history_str) if history_str else []
+                except Exception:
+                    history = []
+                    
+                try:
+                    exams_str = fields.get('exams', ['[]'])[0]
+                    loaded_exams = json.loads(exams_str) if exams_str else []
+                except Exception:
+                    loaded_exams = []
+
+                # Include calendar parameters for all levels to reference dynamically
+                calendar_info = (
+                    "UiTM Academic Calendars Session 2025/2026 Semester II:\n"
+                    "1. Degree (Sarjana Muda) & Postgraduate:\n"
+                    "   - Lectures: 3 June – 12 July 2025\n"
+                    "   - Revision Week (Minggu Ulang Kaji): 13 July – 19 July 2025\n"
+                    "   - Final Examinations (Peperiksaan Akhir): 20 July – 9 August 2025\n"
+                    "2. Diploma / Pre-Diploma:\n"
+                    "   - Lectures: 3 June – 12 July 2025\n"
+                    "   - Revision Week (Minggu Ulang Kaji): 13 July – 19 July 2025\n"
+                    "   - Final Examinations (Peperiksaan Akhir): 20 July – 9 August 2025\n"
+                    "3. Asasi (Foundation): Schedules may differ slightly depending on specific intake cohorts. Always ask to clarify if needed.\n"
+                )
+
+                from datetime import datetime
+                current_date = datetime.now().strftime('%A, %d %B %Y')
+
+                system_instruction = (
+                    "You are 'Finals+ AI', a helpful, friendly, and motivational exam preparation assistant for UiTM students (Asasi, Diploma, Degree, etc.).\n\n"
+                    "CORE FUNCTION & BEHAVIOR:\n"
+                    "1. Proactively reference the student's saved final exams list (if any). Calculate how many days are left until their exams and mention it to keep them motivated.\n"
+                    "2. Focus on assisting students with basic exam preparation queries, specifically targeting key student support categories:\n"
+                    "   - **Study tips**: Share practical, actionable study techniques (like active recall or spaced repetition).\n"
+                    "   - **Plan schedule**: Help plan daily or weekly study sessions and countdown tasks.\n"
+                    "   - **Manage stress**: Provide stress relief advice, mindset tips, and breaks to avoid burn out.\n"
+                    "   - **Create quiz**: Generate mini practice quizzes or flashcards based on the topics they share.\n"
+                    "3. Keep your advice friendly, supportive, and practical. Avoid overly complex, technical syllabus breakdowns unless the student specifically asks for details. Keep responses concise and direct (max 2-3 paragraphs or bullet lists).\n\n"
+                    "STRICT OUT-OF-CONTEXT GUARDRAILS:\n"
+                    "- You MUST ONLY answer questions related to UiTM academic calendars, exam preparation advice, study planning, stress control, and mini revision quiz generation.\n"
+                    "- If a user requests coding tasks, software development, code snippets (e.g., 'Make HTML and CSS for me', 'Write a Python script'), or asks any completely unrelated questions (e.g., recipe suggestions, marketing copywriting, creative writing, non-academic queries), you MUST politely refuse.\n"
+                    "- For any out-of-context request, respond exactly with a friendly refusal message like: 'Maaf, saya direka khas untuk membantu anda bersedia menghadapi peperiksaan akhir UiTM sahaja! Bolehkah saya bantu anda menyediakan jadual ulang kaji atau tips menguruskan stress hari ini?' (or the English equivalent if they asked in English: 'I am here to help you prepare for your UiTM final exams only! How can I help you organize your study sessions or stress relief plans today?').\n\n"
+                    "MATHEMATICAL ACCURACY ON DATE CALCULATION:\n"
+                    f"- The current date today is EXACTLY: {current_date}.\n"
+                    "- You MUST perform exact date math to count the remaining days until the student's exams. For example, if today is June 29 and the exam is July 20, the difference is exactly 21 days (30 - 29 + 20 = 21 days). Double-check your day counts before outputting any response to make sure they are mathematically correct.\n\n"
+                    "LANGUAGE PROTOCOL:\n"
+                    "- By default, you MUST communicate in ENGLISH. Respond in English unless the user explicitly initiates the conversation in Malay.\n"
+                    "- If speaking in Malay (or mixed Manglish), ensure Standard Malaysian Malay (Bahasa Melayu standard) based on Dewan Bahasa dan Pustaka (DBP) guidelines is used. Strictly avoid Indonesian language (Bahasa Indonesia) terminology, spelling, and grammar.\n"
+                    "- Pay close attention to vocabulary differences:\n"
+                    "  - Use 'ulang kaji' (NOT 'renang kaji', 'belajar', or 'ulasan' when talking about revising/studying for exams)\n"
+                    "  - Use 'peperiksaan' (NOT 'ujian')\n"
+                    "  - Use 'butiran' or 'maklumat' (NOT 'informasi')\n"
+                    "  - Use 'rujukan' (NOT 'referensi')\n"
+                    "  - Use 'selamat pagi' or 'selamat sejahtera' correctly without blending Indonesian styles.\n\n"
+                    f"Current Date: {current_date}\n\n"
+                    f"{calendar_info}\n"
+                )
+                
+                if loaded_exams:
+                    system_instruction += "The student currently has these final exams saved in their countdown list:\n"
+                    for exam in loaded_exams:
+                        system_instruction += f"- Code: {exam.get('code')}, Subject: {exam.get('subjectName') or 'N/A'}, Date: {exam.get('dateStr') or 'N/A'}, Location: {exam.get('location') or 'N/A'}\n"
+                    system_instruction += "\n"
+
+                # Define a helper function to search Google/DuckDuckGo without keys
+                def perform_web_search(query):
+                    print(f"Executing web search for: {query}")
+                    try:
+                        search_url = 'https://html.duckduckgo.com/html/?' + urlencode({'q': query + " UiTM syllabus Scheme of Work"})
+                        req = Request(
+                            search_url,
+                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                        )
+                        opener = make_opener()
+                        with opener.open(req, timeout=8) as response:
+                            html_content = response.read().decode('utf-8', errors='replace')
+                            # Extract result rows
+                            results = []
+                            for match in re.finditer(r'<a class="result__snippet"[^>]*>(.*?)</a>', html_content, re.S):
+                                snippet = strip_html(match.group(1))
+                                if snippet:
+                                    results.append(snippet)
+                            if not results:
+                                # Fallback to extract any paragraph tags
+                                for match in re.finditer(r'<td class="result-snippet"[^>]*>(.*?)</td>', html_content, re.S):
+                                    snippet = strip_html(match.group(1))
+                                    if snippet:
+                                        results.append(snippet)
+                            return "\n".join(results[:5]) if results else "No search results found. Ask the student for their specific Scheme of Work topics."
+                    except Exception as e:
+                        return f"Search error: {str(e)}"
+
+                # Define a helper function to scrape the exam paper portal
+                def scrape_past_exam_papers(course_code):
+                    print(f"Scraping past exam papers for: {course_code}")
+                    try:
+                        url = 'https://exampaper.uitm.edu.my/ptarep/report.php?p=05'
+                        post_data = urlencode({
+                            'course': course_code,
+                            'fyear': '',
+                            'fsessi': '',
+                            'search': 'Search'
+                        }).encode('utf-8')
+                        headers = {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Referer': url,
+                            'Cookie': 'PHPSESSID=403sl5ksf7tu4jh9rdh1nkogs2'
+                        }
+                        req = Request(url, data=post_data, headers=headers)
+                        opener = make_opener()
+                        with opener.open(req, timeout=12) as response:
+                            html_content = response.read().decode('utf-8', errors='replace')
+
+                        results = []
+                        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html_content, flags=re.I | re.S)
+                        for row in rows:
+                            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, flags=re.I | re.S)
+                            if len(cells) >= 6:
+                                num = strip_html(cells[0])
+                                if num.lower() == 'num' or not re.match(r'^\d+\.?$', num):
+                                    continue
+                                faculty = strip_html(cells[1])
+                                code = strip_html(cells[2])
+                                name = strip_html(cells[3])
+                                year = strip_html(cells[4])
+                                session = strip_html(cells[5])
+                                results.append(f"Faculty: {faculty} | Code: {code} | Name: {name} | Year: {year} | Session: {session}")
+                        return "\n".join(results[:8]) if results else "No past exam papers found in portal."
+                    except Exception as e:
+                        return f"Scrape error: {str(e)}"
+
+                api_key = os.environ.get('ILMU_API_KEY')
+                if not api_key:
+                    self.send_json(400, {'error': 'ILMU_API_KEY is not configured on the server. Please add it to your environment variables.'})
+                    return
+
+                groq_messages = [{"role": "system", "content": system_instruction}]
+                for h_msg in history:
+                    role = "assistant" if h_msg.get("role") == "model" else "user"
+                    groq_messages.append({"role": role, "content": h_msg.get("content", "")})
+                groq_messages.append({"role": "user", "content": user_msg})
+
+                # Define the search and scraping tool schemas
+                search_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": "google_search",
+                        "description": "Searches the web for general UiTM syllabus topics, course details, or Scheme of Work outlines.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "The search query (e.g. 'CSC248 syllabus scheme of work')."
+                                }
+                            },
+                            "required": ["query"]
+                        }
+                    }
+                }
+                
+                scrape_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": "search_exam_papers",
+                        "description": "Searches the UiTM PTAR past exam paper repository to retrieve official exam papers, faculty details, course titles, year of exam, and session details.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "course_code": {
+                                    "type": "string",
+                                    "description": "The course code to look up (e.g. 'ITT300' or 'CSC248')."
+                                }
+                            },
+                            "required": ["course_code"]
+                        }
+                    }
+                }
+
+                url = 'https://api.ilmu.ai/v1/chat/completions'
+                
+                # Perform the agentic loop (up to 6 iterations for tool calls)
+                for _ in range(6):
+                    req_data = {
+                        "model": "ilmu-v3.1",
+                        "messages": groq_messages,
+                        "tools": [search_tool, scrape_tool],
+                        "tool_choice": "auto",
+                        "max_tokens": 1800
+                    }
+                    
+                    req = Request(
+                        url,
+                        data=json.dumps(req_data).encode('utf-8'),
+                        headers={
+                            'Content-Type': 'application/json',
+                            'Authorization': f'Bearer {api_key}',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    )
+                    
+                    try:
+                        opener = make_opener()
+                        with opener.open(req, timeout=30) as resp:
+                            resp_data = json.loads(resp.read().decode('utf-8'))
+                            choice = resp_data['choices'][0]
+                            message = choice['message']
+                            
+                            # If model requests tool calls, execute search and append to conversation history
+                            if message.get('tool_calls'):
+                                # Construct clean assistant tool call message structure
+                                # Filter out tool calls that are not in request.tools
+                                valid_calls = []
+                                for tc in message['tool_calls']:
+                                    if tc.get('function', {}).get('name') in ['google_search', 'search_exam_papers']:
+                                        valid_calls.append(tc)
+                                
+                                assistant_msg = {
+                                    "role": "assistant",
+                                    "content": message.get('content') or "",
+                                    "tool_calls": valid_calls
+                                }
+                                groq_messages.append(assistant_msg)
+
+                                for tool_call in message['tool_calls']:
+                                    if tool_call['function']['name'] == 'google_search':
+                                        args = json.loads(tool_call['function']['arguments'])
+                                        search_res = perform_web_search(args.get('query', ''))
+                                        groq_messages.append({
+                                            "role": "tool",
+                                            "tool_call_id": tool_call['id'],
+                                            "name": "google_search",
+                                            "content": search_res
+                                        })
+                                    elif tool_call['function']['name'] == 'search_exam_papers':
+                                        args = json.loads(tool_call['function']['arguments'])
+                                        scrape_res = scrape_past_exam_papers(args.get('course_code', ''))
+                                        # Trim payload data: keep only first 4 results to reduce prompt tokens (TPM)
+                                        lines = scrape_res.split('\n')
+                                        trimmed_res = '\n'.join(lines[:4])
+                                        groq_messages.append({
+                                            "role": "tool",
+                                            "tool_call_id": tool_call['id'],
+                                            "name": "search_exam_papers",
+                                            "content": trimmed_res
+                                        })
+                                
+                                # Small delay between tool-call iterations
+                                import time
+                                time.sleep(0.5)
+                                
+                                # Continue loop to get final text response from the model
+                                continue
+                            
+                            # No tool calls: return the final answer
+                            reply = message['content']
+                            self.send_json(200, {'reply': reply})
+                            return
+                            
+                    except Exception as e:
+                        # Handle Rate Limits (HTTP 429) gracefully by sleeping and retrying
+                        is_429 = False
+                        if hasattr(e, 'code') and e.code == 429:
+                            is_429 = True
+                        elif "429" in str(e):
+                            is_429 = True
+
+                        if is_429:
+                            import time
+                            # Extract suggested retry duration or default to 5 seconds
+                            retry_after = 5.0
+                            if hasattr(e, 'headers') and e.headers.get('Retry-After'):
+                                try:
+                                    retry_after = float(e.headers.get('Retry-After'))
+                                except ValueError:
+                                    pass
+                            print(f"HTTP 429 Rate Limit hit. Retrying in {retry_after} seconds...")
+                            import time
+                            time.sleep(retry_after)
+                            # Retry this iteration of the loop by repeating the request
+                            continue
+
+                        import traceback
+                        traceback.print_exc()
+                        error_msg = str(e)
+                        if hasattr(e, 'read'):
+                            try:
+                                error_body = e.read().decode('utf-8', errors='replace')
+                                try:
+                                    error_json = json.loads(error_body)
+                                    if 'error' in error_json and 'message' in error_json['error']:
+                                        error_msg = f"{e} - {error_json['error']['message']}"
+                                    else:
+                                        error_msg = f"{e} - {error_body}"
+                                except Exception:
+                                    error_msg = f"{e} - {error_body}"
+                            except Exception:
+                                pass
+                        self.send_json(500, {'error': f'AI request failed: {error_msg}'})
+                        return
+                
+                # Exceeded tool call limit without returning
+                self.send_json(500, {'error': 'AI search tool call loop limit exceeded.'})
                 return
 
             self.send_json(404, {'error': 'Unknown API route.'})

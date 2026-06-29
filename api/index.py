@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server import Handler
 
+# Force rebuild 34: migrate from Groq to ILMU API (Malaysian sovereign AI)
 class handler(Handler):
     """
     Vercel Serverless Function handler that inherits our existing local HTTP Handler.

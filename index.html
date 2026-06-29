@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com; font-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com https://api.ilmu.ai; font-src 'self' data:;">
     <title>Finals+ | UiTM Final Exam Countdown</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
     <script crossorigin="anonymous" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"></script>
@@ -292,7 +292,6 @@
         .schedule-detail { color: var(--muted); font-size: 15px; line-height: 1.4; }
         .schedule-time { white-space: nowrap; color: var(--ink); font-size: 15px; }
         .empty { max-width: 640px; margin: 0 auto; padding: 42px 24px; border-radius: 8px; background: var(--surface-card); border: 1px solid var(--line); color: var(--muted); }
-
         footer { padding: 64px 0; background: var(--soft); color: var(--muted); font-size: 12px; line-height: 1.45; }
         .footer-grid {
             display: grid;

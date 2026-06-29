@@ -256,6 +256,7 @@ const Nav = ({ darkMode, onToggleTheme }) => html`
                     <a href="#add"><${Icon} name="Plus" size=${14} ><//> Add</a>
                     <a href="#exams"><${Icon} name="BookOpen" size=${14} ><//> Exams</a>
                     <a href="#schedule"><${Icon} name="CalendarDays" size=${14} ><//> Schedule</a>
+                    <a href="/chat"><${Icon} name="MessageSquare" size=${14} ><//> Tanya AI</a>
                     <button onClick=${onToggleTheme} style=${{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: '4px' }} aria-label="Toggle dark mode" title="Toggle dark mode">
                         <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${15} ><//>
                     </button>
@@ -463,6 +464,8 @@ const Schedule = ({ exams, onClear }) => {
         </section>
     `;
 };
+
+
 
 const App = () => {
     useClock();
