@@ -568,8 +568,9 @@ const App = () => {
                 subjectName: normalizeSubjectName(exam.subjectName || detailsByCode.get(exam.code)?.subjectName),
                 lecturer: detailsByCode.get(exam.code)?.lecturer || '',
             }));
+            // Overwrite existing exams to initialize a new list for the new student ID
+            setExams(enriched.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr)));
             if (enriched.length) {
-                mergeExams(enriched);
                 setTimeout(() => {
                     const el = document.getElementById('exams');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
