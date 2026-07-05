@@ -144,6 +144,12 @@ function loadStored() {
 
 function saveStored(exams) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(exams));
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'UPDATE_EXAMS',
+            exams: exams
+        });
+    }
 }
 
 function getMotion() {
@@ -623,3 +629,27 @@ const App = () => {
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} ><//>`);
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => {
+                console.log('Service Worker registered:', reg.scope);
+                // Sync initial exams to Service Worker once registered
+                setTimeout(() => {
+                    if (navigator.serviceWorker.controller) {
+                        try {
+                            const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                            navigator.serviceWorker.controller.postMessage({
+                                type: 'UPDATE_EXAMS',
+                                exams: stored
+                            });
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }, 1000);
+            })
+            .catch(err => console.error('Service Worker registration failed:', err));
+    });
+}

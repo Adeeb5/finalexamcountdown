@@ -1,0 +1,63 @@
+{
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Final Exams Countdown",
+          "weight": "Bolder",
+          "size": "Medium",
+          "color": "Accent"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${if(count(exams) == 0, 'No exams remaining 🎉', '')}",
+          "isSubtle": true,
+          "wrap": true
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "smallView",
+      "isVisible": "${$host.widgetSize == 'small'}",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "${exams[0].subject}",
+          "weight": "Bolder",
+          "wrap": true,
+          "size": "Default"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${exams[0].daysRemaining} days remaining",
+          "size": "ExtraLarge",
+          "color": "Warning",
+          "weight": "Bolder"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "mediumAndLargeView",
+      "isVisible": "${$host.widgetSize != 'small'}",
+      "items": [
+        {
+          "type": "FactSet",
+          "facts": [
+            {
+              "$data": "${exams}",
+              "title": "${subject}",
+              "value": "${daysRemaining} days left"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+}
