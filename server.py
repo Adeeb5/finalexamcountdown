@@ -267,26 +267,26 @@ def generate_zus_notification(subject, days_left, time_of_day):
     
     # Morning templates
     morning_templates = [
-        ("{days_left} hari je lagi {subject} 😶", "buka notes 10 min je dulu"),
+        ("{days_left} hari je lagi {subject} 😶", "Buka notes 10 min je dulu"),
         ("{subject} is calling 🤙", "D-{days_left} weh, hi dulu jap"),
-        ("jangan buat-buat lupa", "touch 1 chapter je harini"),
-        ("countdown is real 🙄", "buka jap lepas tu sambung scroll")
+        ("Jangan buat-buat lupa", "Touch 1 chapter je harini"),
+        ("Countdown is real 🙄", "Buka jap lepas tu sambung scroll")
     ]
     
     # Midday templates
     midday_templates = [
         ("{subject} is calling 🤙", "It's study o'clock 👀"),
-        ("eh {subject} dah sentuh ke belum?", "15 min je janji jalan"),
-        ("dah lunch? study jap", "scroll boleh tunggu {subject} tak"),
-        ("jangan ghost {subject} pls", "buka sekarang future you thanks")
+        ("Eh {subject} dah sentuh ke belum?", "15 min je janji jalan"),
+        ("Dah lunch? Study jap", "Scroll boleh tunggu {subject} tak"),
+        ("Jangan ghost {subject} pls", "Buka sekarang future you thanks")
     ]
     
     # Night templates
     night_templates = [
-        ("{days_left} hari lagi weh 😮💨", "tutup buku dulu recharge"),
-        ("jangan burn out malam ni", "{subject} tunggu esok not tonight"),
-        ("brain need rest fr", "dah cukup grind harini"),
-        ("tidur awal = auto win", "esok kita sambung balik")
+        ("{days_left} hari lagi weh 😮💨", "Tutup buku dulu recharge"),
+        ("Jangan burn out malam ni", "{subject} tunggu esok not tonight"),
+        ("Brain need rest fr", "Dah cukup grind harini"),
+        ("Tidur awal = auto win", "Esok kita sambung balik")
     ]
     
     if time_of_day == "morning":
@@ -413,8 +413,8 @@ def send_cron_notifications():
 
         # 5. Generate ZUS-style Gen Z copy
         if days_left == 0:
-            line1 = f"exam {subject_code} harini weh 😮💨"
-            line2 = "good luck, all the best! 💪"
+            line1 = f"Exam {subject_code} harini weh 😮💨"
+            line2 = "Good luck, all the best! 💪"
         else:
             line1, line2 = generate_zus_notification(subject_code, days_left, time_of_day)
 

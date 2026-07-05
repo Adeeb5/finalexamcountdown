@@ -87,18 +87,18 @@ def send_test_push():
                 subject_code = closest_exam['code']
                 days_left = min_days_left
                 if days_left == 0:
-                    line1 = f"exam {subject_code} harini weh 😮💨"
-                    line2 = "good luck, all the best! 💪"
+                    line1 = f"Exam {subject_code} harini weh 😮💨"
+                    line2 = "Good luck, all the best! 💪"
                 else:
                     line1, line2 = generate_zus_notification(subject_code, days_left, time_of_day)
             else:
                 # Fallback if no upcoming exams
-                line1 = "eh dah start study ke? 👀"
-                line2 = "touch 1 chapter je dulu fr"
+                line1 = "Eh, dah start study ke? 👀"
+                line2 = "Touch 1 chapter je dulu fr"
         else:
             # Fallback if subscription has no subjects saved yet
-            line1 = "eh dah start study ke? 👀"
-            line2 = "touch 1 chapter je dulu fr"
+            line1 = "Eh, dah start study ke? 👀"
+            line2 = "Touch 1 chapter je dulu fr"
 
         payload = {
             "title": line1,
