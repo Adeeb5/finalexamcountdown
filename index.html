@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com; font-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https:; manifest-src 'self'; font-src 'self' data:;">
     <title>Finals+ | UiTM Final Exam Countdown</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
     <link rel="manifest" href="/manifest.json">
@@ -368,7 +368,7 @@
 <body>
     <div id="root"></div>
 
-    <script type="module" src="/assets/app.js"></script>
+    <script type="module" src="/assets/app.js?v=2"></script>
 </body>
 </html>
 
