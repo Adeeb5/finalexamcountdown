@@ -299,7 +299,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            fields = parse_qs(self.read_post())
+            raw_data = self.read_post()
+            fields = parse_qs(raw_data)
             path = self.headers.get('x-vercel-forwarded-path') or self.path
             path = path.split('?')[0]
 
@@ -362,7 +363,6 @@ class Handler(SimpleHTTPRequestHandler):
                 return
 
             if path == '/api/subscribe' or path.endswith('/subscribe'):
-                raw_data = self.read_post()
                 try:
                     subscription_info = json.loads(raw_data)
                     
