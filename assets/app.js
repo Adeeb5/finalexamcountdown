@@ -150,6 +150,29 @@ function saveStored(exams) {
             exams: exams
         });
     }
+    // Silently sync updated subjects list to the database if subscribed
+    updateSubscriptionOnServer(exams);
+}
+
+async function updateSubscriptionOnServer(exams) {
+    try {
+        if (!('serviceWorker' in navigator)) return;
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+            const subjects = exams.map(exam => exam.code || exam.subject).filter(Boolean);
+            await fetch('/api/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subscription: subscription,
+                    subjects: subjects
+                })
+            });
+        }
+    } catch (e) {
+        console.warn('Failed to silently update subscription on server:', e);
+    }
 }
 
 const VAPID_PUBLIC_KEY = 'BJDhk7cieCpvowQhPq3yiI1LCrB5BguEiYdmWFyZUGgUz0Mtdhp8rgkHfRGvVMAj_InvhbCME5Lh_QpsiRct838';
@@ -183,10 +206,16 @@ async function subscribeToPush() {
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
 
+        const exams = loadStored();
+        const subjects = exams.map(exam => exam.code || exam.subject).filter(Boolean);
+
         const res = await fetch('/api/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(subscription)
+            body: JSON.stringify({
+                subscription: subscription,
+                subjects: subjects
+            })
         });
         
         if (res.ok) {

@@ -28,5 +28,11 @@
   ],
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index.py" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-alert",
+      "schedule": "0 0,6,12 * * *"
+    }
   ]
 }

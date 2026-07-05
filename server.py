@@ -221,7 +221,7 @@ def kv_redis_command(cmd, args):
         return None
 
 
-def save_to_supabase(subscription_info):
+def save_to_supabase(subscription_info, subjects):
     import os
     import urllib.request
     import json
@@ -238,7 +238,8 @@ def save_to_supabase(subscription_info):
     url = f"{supabase_url.rstrip('/')}/rest/v1/subscriptions?on_conflict=endpoint"
     payload = json.dumps({
         'endpoint': endpoint,
-        'subscription_data': subscription_info
+        'subscription_data': subscription_info,
+        'subjects': subjects
     }).encode('utf-8')
     
     req = urllib.request.Request(
@@ -261,6 +262,184 @@ def save_to_supabase(subscription_info):
         return False
 
 
+def generate_zus_notification(subject, days_left, time_of_day):
+    import random
+    
+    # Morning templates
+    morning_templates = [
+        ("{days_left} hari je lagi {subject} 😶", "buka notes 10 min je dulu"),
+        ("{subject} is calling 🤙", "D-{days_left} weh, hi dulu jap"),
+        ("jangan buat-buat lupa", "touch 1 chapter je harini"),
+        ("countdown is real 🙄", "buka jap lepas tu sambung scroll")
+    ]
+    
+    # Midday templates
+    midday_templates = [
+        ("{subject} is calling 🤙", "It's study o'clock 👀"),
+        ("eh {subject} dah sentuh ke belum?", "15 min je janji jalan"),
+        ("dah lunch? study jap", "scroll boleh tunggu {subject} tak"),
+        ("jangan ghost {subject} pls", "buka sekarang future you thanks")
+    ]
+    
+    # Night templates
+    night_templates = [
+        ("{days_left} hari lagi weh 😮💨", "tutup buku dulu recharge"),
+        ("jangan burn out malam ni", "{subject} tunggu esok not tonight"),
+        ("brain need rest fr", "dah cukup grind harini"),
+        ("tidur awal = auto win", "esok kita sambung balik")
+    ]
+    
+    if time_of_day == "morning":
+        tpl = random.choice(morning_templates)
+    elif time_of_day == "midday":
+        tpl = random.choice(midday_templates)
+    else:
+        tpl = random.choice(night_templates)
+        
+    line1 = tpl[0].format(subject=subject, days_left=str(days_left))
+    line2 = tpl[1].format(subject=subject, days_left=str(days_left))
+    
+    return line1, line2
+
+
+def get_days_left_myt(exam_date_str):
+    from datetime import datetime, timedelta, timezone
+    try:
+        # Parse exam date
+        exam_dt = datetime.fromisoformat(exam_date_str.split('Z')[0])
+        # Get current time in MYT (UTC + 8 hours)
+        myt = timezone(timedelta(hours=8))
+        now_myt = datetime.now(myt)
+        # Extract dates (ignoring time) to get absolute difference in days
+        exam_date = exam_dt.date()
+        today_date = now_myt.date()
+        return (exam_date - today_date).days
+    except Exception as e:
+        print(f"Error parsing date {exam_date_str}: {e}")
+        return -999
+
+
+def send_cron_notifications():
+    import os
+    import urllib.request
+    import json
+    from datetime import datetime, timedelta, timezone
+    from pywebpush import webpush, WebPushException
+
+    supabase_url = os.environ.get('SUPABASE_URL')
+    supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
+    if not supabase_url or not supabase_key:
+        print("Cron Alert Error: Supabase credentials missing")
+        return {"error": "Supabase credentials missing"}
+
+    # Determine time of day based on current hour in MYT (UTC+8)
+    myt = timezone(timedelta(hours=8))
+    now_myt = datetime.now(myt)
+    hour = now_myt.hour
+
+    if 4 <= hour < 12:
+        time_of_day = "morning"
+    elif 12 <= hour < 17:
+        time_of_day = "midday"
+    else:
+        time_of_day = "night"
+
+    # 1. Fetch all subscriptions from Supabase
+    url = f"{supabase_url.rstrip('/')}/rest/v1/subscriptions"
+    req = urllib.request.Request(
+        url,
+        headers={
+            'apikey': supabase_key,
+            'Authorization': f'Bearer {supabase_key}',
+            'Content-Type': 'application/json'
+        },
+        method='GET'
+    )
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as res:
+            subscriptions = json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        print(f"Cron Alert Error: Failed to fetch subscriptions: {e}")
+        return {"error": f"Failed to fetch subscriptions: {e}"}
+
+    results = []
+    
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    private_key_path = os.path.join(script_dir, "private_key.pem")
+    if not os.path.exists(private_key_path):
+         print("Cron Alert Error: private_key.pem missing")
+         return {"error": "private_key.pem missing"}
+
+    # 2. Iterate through each subscription
+    for sub in subscriptions:
+        sub_data = sub.get("subscription_data")
+        subjects = sub.get("subjects") or []
+        
+        if not sub_data or not subjects:
+            continue
+            
+        # 3. Fetch exam schedules for these subjects in a single batch
+        try:
+            html = fetch_sims_exam_html(subjects)
+            exams_result = parse_exam_rows(html, subjects)
+            found_exams = exams_result.get('found', [])
+        except Exception as e:
+            print(f"Cron Alert: Failed to fetch exams for {subjects}: {e}")
+            continue
+
+        if not found_exams:
+            continue
+
+        # 4. Find the closest upcoming exam (days_left >= 0)
+        closest_exam = None
+        min_days_left = 9999
+        
+        for exam in found_exams:
+            days_left = get_days_left_myt(exam['dateStr'])
+            if 0 <= days_left < min_days_left:
+                min_days_left = days_left
+                closest_exam = exam
+
+        if closest_exam is None:
+            continue
+
+        subject_code = closest_exam['code']
+        days_left = min_days_left
+
+        # Only send notifications if the exam is within 7 days
+        if days_left > 7:
+            continue
+
+        # 5. Generate ZUS-style Gen Z copy
+        if days_left == 0:
+            line1 = f"exam {subject_code} harini weh 😮💨"
+            line2 = "good luck, all the best! 💪"
+        else:
+            line1, line2 = generate_zus_notification(subject_code, days_left, time_of_day)
+
+        payload = {
+            "title": line1,
+            "body": line2,
+            "url": "https://www.finalsplus.my/"
+        }
+
+        # 6. Send the push notification
+        try:
+            webpush(
+                subscription_info=sub_data,
+                data=json.dumps(payload),
+                vapid_private_key=private_key_path,
+                vapid_claims={"sub": "mailto:admin@finalsplus.my"}
+            )
+            results.append({"endpoint": sub_data.get("endpoint")[:40] + "...", "status": "success"})
+        except WebPushException as ex:
+            print(f"Cron Alert push failed: {ex}")
+            results.append({"endpoint": sub_data.get("endpoint")[:40] + "...", "status": "failed", "error": str(ex)})
+
+    return {"status": "completed", "sent_count": len([r for r in results if r["status"] == "success"]), "details": results}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('X-Frame-Options', 'SAMEORIGIN')
@@ -272,6 +451,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         import os
+        
+        clean_path = self.path.split('?')[0]
+        if clean_path == '/api/cron-alert' or clean_path.endswith('/cron-alert'):
+            res = send_cron_notifications()
+            status = 200 if "error" not in res else 500
+            self.send_json(status, res)
+            return
+
         path = self.translate_path(self.path)
         if not os.path.exists(path) and not self.path.startswith('/api/'):
             self.send_response(404)
@@ -364,10 +551,16 @@ class Handler(SimpleHTTPRequestHandler):
 
             if path == '/api/subscribe' or path.endswith('/subscribe'):
                 try:
-                    subscription_info = json.loads(raw_data)
+                    payload_data = json.loads(raw_data)
+                    if isinstance(payload_data, dict) and "subscription" in payload_data:
+                        subscription_info = payload_data.get("subscription")
+                        subjects = payload_data.get("subjects", [])
+                    else:
+                        subscription_info = payload_data
+                        subjects = []
                     
                     # Try Supabase first
-                    supabase_result = save_to_supabase(subscription_info)
+                    supabase_result = save_to_supabase(subscription_info, subjects)
                     if supabase_result is True:
                         self.send_json(200, {'status': 'success', 'message': 'Subscription stored in Supabase.'})
                         return
