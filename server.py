@@ -193,6 +193,34 @@ def enrich_exam_subjects(result):
     return result
 
 
+def kv_redis_command(cmd, args):
+    import os
+    import urllib.request
+    import json
+    kv_url = os.environ.get('KV_REST_API_URL')
+    kv_token = os.environ.get('KV_REST_API_TOKEN')
+    if not kv_url or not kv_token:
+        return None
+    
+    url = f"{kv_url}"
+    payload = json.dumps([cmd] + args).encode('utf-8')
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            'Authorization': f'Bearer {kv_token}',
+            'Content-Type': 'application/json'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as res:
+            return json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        print(f"Vercel KV Error: {e}")
+        return None
+
+
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('X-Frame-Options', 'SAMEORIGIN')
@@ -297,19 +325,26 @@ class Handler(SimpleHTTPRequestHandler):
                 raw_data = self.read_post()
                 try:
                     subscription_info = json.loads(raw_data)
-                    subscriptions = []
-                    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'subscriptions.json')
-                    if os.path.exists(db_path):
-                        try:
-                            with open(db_path, 'r', encoding='utf-8') as f:
-                                subscriptions = json.load(f)
-                        except Exception:
-                            pass
-                    if subscription_info not in subscriptions:
-                        subscriptions.append(subscription_info)
-                        with open(db_path, 'w', encoding='utf-8') as f:
-                            json.dump(subscriptions, f, indent=2)
-                    self.send_json(200, {'status': 'success', 'message': 'Subscription stored successfully.'})
+                    
+                    # Try Vercel KV first (production environment)
+                    kv_result = kv_redis_command('SADD', ['subscriptions', json.dumps(subscription_info)])
+                    if kv_result is not None:
+                        self.send_json(200, {'status': 'success', 'message': 'Subscription stored in Vercel KV.'})
+                    else:
+                        # Fallback to local file (development environment)
+                        subscriptions = []
+                        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'subscriptions.json')
+                        if os.path.exists(db_path):
+                            try:
+                                with open(db_path, 'r', encoding='utf-8') as f:
+                                    subscriptions = json.load(f)
+                            except Exception:
+                                pass
+                        if subscription_info not in subscriptions:
+                            subscriptions.append(subscription_info)
+                            with open(db_path, 'w', encoding='utf-8') as f:
+                                json.dump(subscriptions, f, indent=2)
+                        self.send_json(200, {'status': 'success', 'message': 'Subscription stored in local file.'})
                 except Exception as e:
                     self.send_json(400, {'error': f'Invalid subscription format: {str(e)}'})
                 return
