@@ -152,7 +152,7 @@ function saveStored(exams) {
     }
 }
 
-const VAPID_PUBLIC_KEY = 'BI55e-K12x9a44p-N_A44t-PzZf-Xn9-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_w';
+const VAPID_PUBLIC_KEY = 'BJDhk7cieCpvowQhPq3yiI1LCrB5BguEiYdmWFyZUGgUz0Mtdhp8rgkHfRGvVMAj_InvhbCME5Lh_QpsiRct838';
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
