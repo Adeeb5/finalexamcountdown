@@ -337,7 +337,8 @@ const Nav = ({ darkMode, onToggleTheme }) => html`
             <div className="nav-inner">
                 <span className="brand" style=${{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><${Logo} ><//> Finals+</span>
                 <div className="nav-links" style=${{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                    <a href="#add"><${Icon} name="Plus" size=${14} ><//> Add</a>
+                    <a href="#add" className="desktop-only"><${Icon} name="Plus" size=${14} ><//> Add</a>
+                    <a href="#import" className="mobile-only"><${Icon} name="Plus" size=${14} ><//> Add</a>
                     <a href="#exams"><${Icon} name="BookOpen" size=${14} ><//> Exams</a>
                     <a href="#schedule"><${Icon} name="CalendarDays" size=${14} ><//> Schedule</a>
                     <button onClick=${onToggleTheme} style=${{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: '4px' }} aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -350,7 +351,8 @@ const Nav = ({ darkMode, onToggleTheme }) => html`
             <div className="subnav-inner">
                 <div className="sub-title"><img src="/assets/logo.png" alt="Finals+" style=${{ height: '28px', display: 'block' }} /></div>
                 <div className="sub-actions">
-                    <a className="text-link" href="#add"><${Icon} name="Download" size=${16} ><//> Import</a>
+                    <a className="text-link desktop-only" href="#add"><${Icon} name="Download" size=${16} ><//> Import</a>
+                    <a className="text-link mobile-only" href="#import"><${Icon} name="Download" size=${16} ><//> Import</a>
                     <a className="pill primary" href="#exams"><${Icon} name="ListChecks" size=${18} ><//> My exams</a>
                 </div>
             </div>
@@ -376,7 +378,8 @@ const Hero = ({ exams }) => {
                     <h1>Your finals, saved for next time.</h1>
                     <p className="lead">Add course codes or import from matric number, then the app saves your selected exam subjects in this browser.</p>
                     <div className="hero-actions">
-                        <a className="pill primary" href="#add"><${Icon} name="Plus" size=${18} ><//> Add subjects</a>
+                        <a className="pill primary desktop-only" href="#add"><${Icon} name="Plus" size=${18} ><//> Add subjects</a>
+                        <a className="pill primary mobile-only" href="#import"><${Icon} name="Plus" size=${18} ><//> Add subjects</a>
                         <a className="pill secondary" href="#schedule"><${Icon} name="CalendarDays" size=${18} ><//> View schedule</a>
                         <button className="pill secondary" onClick=${subscribeToPush}><${Icon} name="Bell" size=${18} ><//> Enable alerts</button>
                     </div>

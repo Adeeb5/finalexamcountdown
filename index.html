@@ -287,6 +287,8 @@
         .dark-mode .icon-btn { background: #351c20; border-color: #5b282c; }
         .dark-mode .icon-btn:hover { background: #4d2328; border-color: #8c2a32; }
  
+        .mobile-only { display: none !important; }
+
         .schedule-list { display: grid; gap: 12px; max-width: 940px; margin: 0 auto; }
         .schedule-row { display: grid; grid-template-columns: 100px 1fr auto 40px; gap: 18px; align-items: center; padding: 18px 22px; border-radius: 8px; background: var(--surface-card); border: 1px solid var(--line); text-align: left; }
         .schedule-code { font-size: 21px; font-weight: 700; }
@@ -339,6 +341,9 @@
         }
 
         @media (max-width: 900px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: block !important; }
+            a.mobile-only, button.mobile-only { display: inline-flex !important; }
             .hero-grid, .tool-panel { grid-template-columns: 1fr; }
             .hero-grid { text-align: center; }
             .lead { margin-left: auto; margin-right: auto; }
