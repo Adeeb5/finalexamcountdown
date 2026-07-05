@@ -221,13 +221,53 @@ def kv_redis_command(cmd, args):
         return None
 
 
+def save_to_supabase(subscription_info):
+    import os
+    import urllib.request
+    import json
+    
+    supabase_url = os.environ.get('SUPABASE_URL')
+    supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_ANON_KEY')
+    if not supabase_url or not supabase_key:
+        return None
+        
+    endpoint = subscription_info.get('endpoint')
+    if not endpoint:
+        return None
+        
+    url = f"{supabase_url.rstrip('/')}/rest/v1/subscriptions"
+    payload = json.dumps({
+        'endpoint': endpoint,
+        'subscription_data': subscription_info
+    }).encode('utf-8')
+    
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            'apikey': supabase_key,
+            'Authorization': f'Bearer {supabase_key}',
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+        },
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as res:
+            res.read()
+            return True
+    except Exception as e:
+        print(f"Supabase Error: {e}")
+        return False
+
+
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('X-Frame-Options', 'SAMEORIGIN')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'strict-origin')
         self.send_header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://simsweb.uitm.edu.my https://uitmtimetable.com; font-src 'self' data:; frame-ancestors 'none';")
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https:; font-src 'self' data:; frame-ancestors 'none';")
         super().end_headers()
 
     def do_GET(self):
@@ -326,7 +366,13 @@ class Handler(SimpleHTTPRequestHandler):
                 try:
                     subscription_info = json.loads(raw_data)
                     
-                    # Try Vercel KV first (production environment)
+                    # Try Supabase first
+                    supabase_result = save_to_supabase(subscription_info)
+                    if supabase_result is True:
+                        self.send_json(200, {'status': 'success', 'message': 'Subscription stored in Supabase.'})
+                        return
+                    
+                    # Try Vercel KV second (production environment)
                     kv_result = kv_redis_command('SADD', ['subscriptions', json.dumps(subscription_info)])
                     if kv_result is not None:
                         self.send_json(200, {'status': 'success', 'message': 'Subscription stored in Vercel KV.'})
