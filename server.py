@@ -235,7 +235,7 @@ def save_to_supabase(subscription_info):
     if not endpoint:
         return None
         
-    url = f"{supabase_url.rstrip('/')}/rest/v1/subscriptions"
+    url = f"{supabase_url.rstrip('/')}/rest/v1/subscriptions?on_conflict=endpoint"
     payload = json.dumps({
         'endpoint': endpoint,
         'subscription_data': subscription_info
