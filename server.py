@@ -293,6 +293,27 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(200, {'codes': codes, 'subjects': subjects})
                 return
 
+            if path == '/api/subscribe' or path.endswith('/subscribe'):
+                raw_data = self.read_post()
+                try:
+                    subscription_info = json.loads(raw_data)
+                    subscriptions = []
+                    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'subscriptions.json')
+                    if os.path.exists(db_path):
+                        try:
+                            with open(db_path, 'r', encoding='utf-8') as f:
+                                subscriptions = json.load(f)
+                        except Exception:
+                            pass
+                    if subscription_info not in subscriptions:
+                        subscriptions.append(subscription_info)
+                        with open(db_path, 'w', encoding='utf-8') as f:
+                            json.dump(subscriptions, f, indent=2)
+                    self.send_json(200, {'status': 'success', 'message': 'Subscription stored successfully.'})
+                except Exception as e:
+                    self.send_json(400, {'error': f'Invalid subscription format: {str(e)}'})
+                return
+
             self.send_json(404, {'error': 'Unknown API route.'})
         except (HTTPError, URLError, TimeoutError) as exc:
             print(f"Proxy fetch error: {exc}")

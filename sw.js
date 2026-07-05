@@ -121,3 +121,34 @@ self.addEventListener('widgetclick', event => {
 self.addEventListener('widgetuninstall', event => {
   console.log(`Widget ${event.widget.id} uninstalled.`);
 });
+
+// Push Notification Listeners
+self.addEventListener('push', event => {
+  let data = { title: 'Finals+ Alert', body: 'You have an upcoming exam.' };
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'Finals+ Alert', body: event.data.text() };
+    }
+  }
+  const options = {
+    body: data.body,
+    icon: '/assets/logo-icon.png',
+    badge: '/assets/logo-icon.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/'
+    }
+  };
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url || '/')
+  );
+});

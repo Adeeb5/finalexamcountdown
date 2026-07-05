@@ -152,6 +152,55 @@ function saveStored(exams) {
     }
 }
 
+const VAPID_PUBLIC_KEY = 'BI55e-K12x9a44p-N_A44t-PzZf-Xn9-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_v-X_w';
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function subscribeToPush() {
+    try {
+        if (!('serviceWorker' in navigator)) {
+            alert('Service workers are not supported by this browser.');
+            return;
+        }
+        const registration = await navigator.serviceWorker.ready;
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            alert('Notification permission denied. Please allow notifications to receive countdown alerts.');
+            return;
+        }
+
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+
+        const res = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subscription)
+        });
+        
+        if (res.ok) {
+            alert('Alerts enabled! You will now receive push notifications for your final exams.');
+        } else {
+            const data = await res.json();
+            alert(`Failed to subscribe: ${data.error || 'Server error'}`);
+        }
+    } catch (error) {
+        console.error('Push Subscription failed:', error);
+        alert('Push Notification registration failed. Make sure your browser supports web push notifications.');
+    }
+}
+
 function getMotion() {
     const candidates = [window.Motion, window.motion, window.MotionOne, window.motionOne].filter(Boolean);
     return candidates.find(candidate => candidate.animate) || null;
@@ -300,6 +349,7 @@ const Hero = ({ exams }) => {
                     <div className="hero-actions">
                         <a className="pill primary" href="#add"><${Icon} name="Plus" size=${18} ><//> Add subjects</a>
                         <a className="pill secondary" href="#schedule"><${Icon} name="CalendarDays" size=${18} ><//> View schedule</a>
+                        <button className="pill secondary" onClick=${subscribeToPush}><${Icon} name="Bell" size=${18} ><//> Enable alerts</button>
                     </div>
                 </div>
                 <div className="device-stage" aria-hidden="true">
