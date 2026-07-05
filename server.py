@@ -267,7 +267,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'strict-origin')
         self.send_header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https:; font-src 'self' data:; frame-ancestors 'none';")
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https:; manifest-src 'self'; font-src 'self' data:; frame-ancestors 'none';")
         super().end_headers()
 
     def do_GET(self):
