@@ -23,6 +23,7 @@ COURSE_NAME_TRANSLATIONS = {
     'INTRODUCTION TO DATA COMMUNICATIONS AND NETWORKING': 'Introduction to Data Communication and Networking',
     'PENGENALAN KEPADA KEBARANGKALIAN DAN STATISTIK': 'Introduction to Probability and Statistics',
     'ELEKTRONIK DIGITAL': 'Digital Electronics',
+    'BAHASA INGGERIS': 'English Language',
 }
 
 
