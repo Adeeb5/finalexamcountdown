@@ -11,6 +11,7 @@ self.addEventListener('install', event => {
         '/index.html',
         '/assets/app.js?v=2',
         '/assets/logo-icon-192.png',
+        '/assets/logo-pwa-512.png',
         '/assets/logo-icon.png',
         '/assets/logo.png',
         '/manifest.json',
