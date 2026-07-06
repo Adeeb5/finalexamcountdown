@@ -388,13 +388,18 @@ const MobileGlassNav = ({ darkMode, onToggleTheme }) => {
             }
             lastScrollY = currentScrollY;
 
-            const sections = ['overview', 'add', 'exams', 'schedule'];
+            if (currentScrollY < 150) {
+                setActiveSection('overview');
+                return;
+            }
+
+            const sections = ['import', 'exams', 'schedule'];
             for (const section of sections) {
                 const el = document.getElementById(section);
                 if (el) {
                     const rect = el.getBoundingClientRect();
                     if (rect.top <= 250 && rect.bottom >= 150) {
-                        setActiveSection(section);
+                        setActiveSection(section === 'import' ? 'add' : section);
                         break;
                     }
                 }
@@ -416,11 +421,11 @@ const MobileGlassNav = ({ darkMode, onToggleTheme }) => {
             onPointerOver=${handleInteraction}
         >
             <div className="mobile-glass-nav-pill">
-                <a href="#overview" className=${`nav-pill-item ${activeSection === 'overview' ? 'active' : ''}`}>
+                <a href="#root" className=${`nav-pill-item ${activeSection === 'overview' ? 'active' : ''}`}>
                     <${Icon} name="Home" size=${20} ><//>
-                    <span className="nav-item-label">Today</span>
+                    <span className="nav-item-label">Overview</span>
                 </a>
-                <a href="#add" className=${`nav-pill-item ${activeSection === 'add' ? 'active' : ''}`}>
+                <a href="#import" className=${`nav-pill-item ${activeSection === 'add' ? 'active' : ''}`}>
                     <${Icon} name="Plus" size=${20} ><//>
                     <span className="nav-item-label">Add</span>
                 </a>
