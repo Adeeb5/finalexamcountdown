@@ -80,6 +80,7 @@ function statusCopy(exam) {
     if (status === 'finished') return 'Completed';
     if (status === 'running') return 'In progress';
     if (!timeLeft) return 'Scheduled';
+    return `${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m`;
 }
 
 function cleanRawTime(timeStr) {
