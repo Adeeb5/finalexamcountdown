@@ -531,7 +531,6 @@ class Handler(SimpleHTTPRequestHandler):
                         or row.get('english_name')
                         or row.get('course_name_en')
                         or row.get('course_english_name')
-                        or row.get('subject_name')
                         or ''
                     )
                     subjects.append({
@@ -547,6 +546,10 @@ class Handler(SimpleHTTPRequestHandler):
                         if not subject['subjectName'] and aims_titles.get(subject['code']):
                             subject['subjectName'] = aims_titles[subject['code']]
                             subject['subjectSource'] = 'AIMS course search'
+                # Final fallback to official (Malay) name if both timetable and AIMS had no English title
+                for subject in subjects:
+                    if not subject['subjectName']:
+                        subject['subjectName'] = subject['officialSubjectName']
                 self.send_json(200, {'codes': codes, 'subjects': subjects})
                 return
 
