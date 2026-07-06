@@ -49,7 +49,10 @@
             --ink-lead: #d0c9e3;
         }
 
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
         html { scroll-behavior: smooth; }
         body {
             margin: 0;
@@ -60,10 +63,25 @@
             -webkit-font-smoothing: antialiased;
             text-rendering: geometricPrecision;
         }
-        button, input, a { font: inherit; }
+        button, input, a { 
+            font: inherit; 
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
         button:disabled { cursor: wait; opacity: 0.72; }
         a { color: inherit; }
         code { font-family: "SF Mono", Consolas, monospace; }
+
+        /* Prevent outer viewport media queries from breaking the inner device mockup layout */
+        .device .mini-row {
+            grid-template-columns: 44px 1fr auto !important;
+        }
+        .device .mini-state {
+            grid-column: auto !important;
+            font-size: 11px !important;
+            text-align: right !important;
+            white-space: nowrap !important;
+        }
 
         .global-nav {
             position: sticky;

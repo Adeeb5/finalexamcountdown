@@ -80,7 +80,12 @@ function statusCopy(exam) {
     if (status === 'finished') return 'Completed';
     if (status === 'running') return 'In progress';
     if (!timeLeft) return 'Scheduled';
-    return `${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m`;
+}
+
+function cleanRawTime(timeStr) {
+    if (!timeStr) return '';
+    // Format "9:00:00 AM - 12:00:00 PM" -> "9:00 AM - 12:00 PM"
+    return String(timeStr).replace(/:00\s*(AM|PM)/gi, ' $1').replace(/:00\s*(?=-|$)/g, ' ');
 }
 
 function parseSimsHtml(html, requestedCodes) {
@@ -428,7 +433,12 @@ const MobileGlassNav = ({ darkMode, onToggleTheme }) => {
                     <span className="nav-item-label">Schedule</span>
                 </a>
                 <button onClick=${onToggleTheme} className="nav-pill-item theme-toggle-btn" aria-label="Toggle theme">
-                    <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${20} ><//>
+                    <span style=${{ display: darkMode ? 'inline-flex' : 'none', alignItems: 'center' }}>
+                        <${Icon} name="Sun" size=${20} ><//>
+                    </span>
+                    <span style=${{ display: darkMode ? 'none' : 'inline-flex', alignItems: 'center' }}>
+                        <${Icon} name="Moon" size=${20} ><//>
+                    </span>
                     <span className="nav-item-label">Theme</span>
                 </button>
             </div>
@@ -442,9 +452,9 @@ const Hero = ({ exams }) => {
     const main = nextExam ? calculateTimeLeft(nextExam.dateStr)?.days ?? 0 : exams.length;
     const label = nextExam ? `days to ${nextExam.code}` : exams.length ? 'saved exam subjects' : 'saved subjects';
     const preview = (exams.length ? exams : [
-        { code: 'CSC207', dateStr: new Date(Date.now() + 86400000 * 12).toISOString(), rawTime: 'Add your real course' },
-        { code: 'MAT210', dateStr: new Date(Date.now() + 86400000 * 16).toISOString(), rawTime: 'Saved locally' },
-        { code: 'ICT200', dateStr: new Date(Date.now() + 86400000 * 19).toISOString(), rawTime: 'Restored on reopen' },
+        { code: 'CSC207', dateStr: new Date(Date.now() + 86400000 * 12).toISOString(), rawTime: '9:00:00 AM - 12:00:00 PM' },
+        { code: 'MAT210', dateStr: new Date(Date.now() + 86400000 * 16).toISOString(), rawTime: '9:00:00 AM - 11:00:00 AM' },
+        { code: 'ICT200', dateStr: new Date(Date.now() + 86400000 * 19).toISOString(), rawTime: '2:15:00 PM - 5:15:00 PM' },
     ]).slice(0, 3);
     return html`
         <section className="hero motion-root" id="overview">
@@ -479,7 +489,7 @@ const Hero = ({ exams }) => {
                                             <p className="mini-title">${exam.code}</p>
                                             <p className="mini-meta">${formatDate(exam.dateStr)}</p>
                                         </div>
-                                        <p className="mini-state">${exam.rawTime || statusCopy(exam)}</p>
+                                        <p className="mini-state">${cleanRawTime(exam.rawTime || statusCopy(exam))}</p>
                                     </div>
                                 `)}
                             </div>
