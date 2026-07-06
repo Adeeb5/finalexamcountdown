@@ -49,7 +49,7 @@ def send_test_push():
 
     if 4 <= hour < 12:
         time_of_day = "morning"
-    elif 12 <= hour < 17:
+    elif 12 <= hour < 19:
         time_of_day = "midday"
     else:
         time_of_day = "night"

@@ -339,7 +339,7 @@ def send_cron_notifications():
 
     if 4 <= hour < 12:
         time_of_day = "morning"
-    elif 12 <= hour < 17:
+    elif 12 <= hour < 19:
         time_of_day = "midday"
     else:
         time_of_day = "night"
@@ -407,8 +407,8 @@ def send_cron_notifications():
         subject_code = closest_exam['code']
         days_left = min_days_left
 
-        # Only send notifications if the exam is within 7 days
-        if days_left > 7:
+        # Only send notifications if the exam is within 30 days
+        if days_left > 30:
             continue
 
         # 5. Generate ZUS-style Gen Z copy

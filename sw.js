@@ -2,14 +2,24 @@ const CACHE_NAME = 'finals-widget-cache-v1';
 const TEMPLATE_URL = '/finals-widget-template.json';
 const DATA_URL = '/finals-widget-data.json';
 
-// Install event
+// Install event - caches static assets for offline capability
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll([
+        '/',
+        '/index.html',
+        '/assets/app.js?v=2',
+        '/assets/logo-icon-192.png',
+        '/assets/logo-icon.png',
+        '/assets/logo.png',
+        '/manifest.json',
+        '/assets/favicon.ico',
         TEMPLATE_URL,
         DATA_URL
-      ]);
+      ]).catch(err => {
+        console.warn('Pre-caching assets failed:', err);
+      });
     })
   );
   self.skipWaiting();
@@ -18,6 +28,42 @@ self.addEventListener('install', event => {
 // Activate event
 self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim());
+});
+
+// Fetch event listener (Required for PWA installability prompt)
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  event.respondWith(
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) {
+        // Stale-While-Revalidate pattern
+        fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse));
+          }
+        }).catch(() => {});
+        return cachedResponse;
+      }
+
+      return fetch(event.request).then(networkResponse => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
+        return networkResponse;
+      }).catch(() => {
+        return caches.match('/');
+      });
+    })
+  );
 });
 
 // Helper: Calculate days remaining
