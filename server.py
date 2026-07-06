@@ -163,7 +163,7 @@ def fetch_single_aims_title(code):
         opener = make_opener()
         html = post_form(
             AIMS_SEARCH_URL,
-            urlencode({'searchType': 'modules', 'm': code}),
+            urlencode({'searchType': 'modules', 'p': code}),
             opener=opener,
             referer=AIMS_SEARCH_URL,
         )
