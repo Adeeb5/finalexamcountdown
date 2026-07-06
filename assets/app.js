@@ -13,6 +13,7 @@ const COURSE_NAME_TRANSLATIONS = {
     'INTRODUCTION TO DATA COMMUNICATIONS AND NETWORKING': 'Introduction to Data Communication and Networking',
     'PENGENALAN KEPADA KEBARANGKALIAN DAN STATISTIK': 'Introduction to Probability and Statistics',
     'ELEKTRONIK DIGITAL': 'Digital Electronics',
+    'BAHASA INGGERIS': 'English Language',
 };
 
 function normalizeCode(value) {
@@ -788,7 +789,7 @@ const App = () => {
                     <div className="footer-brand">
                         <img src="/assets/logo.png" alt="Finals+" className="footer-logo" />
                         <div className="footer-credits">Developed by Adeeb</div>
-                        <div>&copy; ${new Date().getFullYear()} Finals+. All rights reserved.</div>
+                        <div>© ${new Date().getFullYear()} Finals+. All rights reserved.</div>
                     </div>
                     <div className="footer-links">
                         <a href="#privacy" onClick=${e => { e.preventDefault(); setModal({ isOpen: true, title: 'Privacy Policy', content: PRIVACY_CONTENT }); }}>Privacy Policy</a>
