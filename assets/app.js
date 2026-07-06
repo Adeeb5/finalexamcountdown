@@ -357,8 +357,84 @@ const Nav = ({ darkMode, onToggleTheme }) => html`
                 </div>
             </div>
         </div>
-    <//>
 `;
+
+const MobileGlassNav = ({ darkMode, onToggleTheme }) => {
+    const [showLabels, setShowLabels] = useState(true);
+    const [activeSection, setActiveSection] = useState('overview');
+
+    useEffect(() => {
+        if (!showLabels) return;
+        const timer = setTimeout(() => {
+            setShowLabels(false);
+        }, 3500);
+        return () => clearTimeout(timer);
+    }, [showLabels]);
+
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            
+            if (currentScrollY < lastScrollY - 15) {
+                setShowLabels(true);
+            } else if (currentScrollY > lastScrollY + 15) {
+                setShowLabels(false);
+            }
+            lastScrollY = currentScrollY;
+
+            const sections = ['overview', 'add', 'exams', 'schedule'];
+            for (const section of sections) {
+                const el = document.getElementById(section);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top <= 250 && rect.bottom >= 150) {
+                        setActiveSection(section);
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const handleInteraction = () => {
+        setShowLabels(true);
+    };
+
+    return html`
+        <div 
+            className=${`mobile-glass-nav-container ${showLabels ? 'with-labels' : 'icons-only'}`} 
+            onClick=${handleInteraction}
+            onPointerOver=${handleInteraction}
+        >
+            <div className="mobile-glass-nav-pill">
+                <a href="#overview" className=${`nav-pill-item ${activeSection === 'overview' ? 'active' : ''}`}>
+                    <${Icon} name="Home" size=${20} ><//>
+                    <span className="nav-item-label">Today</span>
+                </a>
+                <a href="#add" className=${`nav-pill-item ${activeSection === 'add' ? 'active' : ''}`}>
+                    <${Icon} name="Plus" size=${20} ><//>
+                    <span className="nav-item-label">Add</span>
+                </a>
+                <a href="#exams" className=${`nav-pill-item ${activeSection === 'exams' ? 'active' : ''}`}>
+                    <${Icon} name="ListChecks" size=${20} ><//>
+                    <span className="nav-item-label">Exams</span>
+                </a>
+                <a href="#schedule" className=${`nav-pill-item ${activeSection === 'schedule' ? 'active' : ''}`}>
+                    <${Icon} name="CalendarDays" size=${20} ><//>
+                    <span className="nav-item-label">Schedule</span>
+                </a>
+                <button onClick=${onToggleTheme} className="nav-pill-item theme-toggle-btn" aria-label="Toggle theme">
+                    <${Icon} name=${darkMode ? "Sun" : "Moon"} size=${20} ><//>
+                    <span className="nav-item-label">Theme</span>
+                </button>
+            </div>
+        </div>
+    `;
+};
 
 const Hero = ({ exams }) => {
     const upcoming = exams.filter(exam => getStatus(exam) === 'upcoming').sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
@@ -705,6 +781,7 @@ const App = () => {
                     <div className="footer-disclaimer">Sources: official SIMS exam schedule.</div>
                 </div>
             </footer>
+            <${MobileGlassNav} darkMode=${darkMode} onToggleTheme=${() => setDarkMode(!darkMode)}><//>
             <${Modal} isOpen=${modal.isOpen} onClose=${() => setModal({ ...modal, isOpen: false })} title=${modal.title} content=${modal.content}><//>
         <//>
     `;
