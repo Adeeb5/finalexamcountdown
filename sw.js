@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finals-widget-cache-v1';
+const CACHE_NAME = 'finals-widget-cache-v2';
 const TEMPLATE_URL = '/finals-widget-template.json';
 const DATA_URL = '/finals-widget-data.json';
 
@@ -9,7 +9,7 @@ self.addEventListener('install', event => {
       return cache.addAll([
         '/',
         '/index.html',
-        '/assets/app.js?v=2',
+        '/assets/app.js?v=3',
         '/assets/logo-icon-192.png',
         '/assets/logo-pwa-512.png',
         '/assets/logo-icon.png',
@@ -26,9 +26,19 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate event
+// Activate event - cleans up old caches
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 // Fetch event listener (Required for PWA installability prompt)
