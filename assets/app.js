@@ -374,7 +374,6 @@ const NotificationBanner = ({ isOpen, onClose, type, text }) => {
                         }} />
                         <span style=${{ fontSize: '11px', fontWeight: 600, color: subColor, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Finals+</span>
                     </div>
-                    <span style=${{ fontSize: '11px', color: subColor }}>now</span>
                 </div>
                 <div>
                     <h5 style=${{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: textColor }}>${type === 'error' ? 'Import Failed' : 'Notification'}</h5>
