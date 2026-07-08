@@ -320,12 +320,24 @@ const playNotificationSound = () => {
 
 const NotificationBanner = ({ isOpen, onClose, type, text }) => {
     if (!isOpen) return null;
+    const [isClosing, setIsClosing] = React.useState(false);
 
     React.useEffect(() => {
+        setIsClosing(false);
         playNotificationSound();
-        const timer = setTimeout(onClose, 6000);
-        return () => clearTimeout(timer);
+        const timer = setTimeout(() => {
+            setIsClosing(true);
+            setTimeout(onClose, 250);
+        }, 5700);
+        return () => {
+            clearTimeout(timer);
+        };
     }, [text]);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 250);
+    };
 
     const isDark = document.body.classList.contains('dark-mode');
     const bgColor = isDark ? 'rgba(28, 28, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)';
@@ -343,10 +355,12 @@ const NotificationBanner = ({ isOpen, onClose, type, text }) => {
             zIndex: 10000,
             width: 'calc(100% - 32px)',
             maxWidth: '380px',
-            animation: 'bannerSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            animation: isClosing 
+                ? 'bannerSlideUp 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards' 
+                : 'bannerSlideDown 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
             cursor: 'pointer',
             WebkitTapHighlightColor: 'transparent'
-        }} onClick=${onClose}>
+        }} onClick=${handleClose}>
             <div style=${{
                 backgroundColor: bgColor,
                 backdropFilter: 'blur(20px)',
