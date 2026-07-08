@@ -1,6 +1,7 @@
 import os
 import json
 import urllib.request
+# pyrefly: ignore [missing-import]
 from pywebpush import webpush, WebPushException
 
 # Replace these with your actual Supabase credentials if running locally
