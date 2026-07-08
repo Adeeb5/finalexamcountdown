@@ -284,70 +284,77 @@ const TERMS_CONTENT = html`
     <//>
 `;
 
-const AppleAlert = ({ isOpen, onClose, title, text }) => {
+const NotificationBanner = ({ isOpen, onClose, type, text }) => {
     if (!isOpen) return null;
+
+    React.useEffect(() => {
+        const timer = setTimeout(onClose, 6000);
+        return () => clearTimeout(timer);
+    }, [text]);
+
     const isDark = document.body.classList.contains('dark-mode');
-    const bgColor = isDark ? 'rgba(37, 37, 37, 0.88)' : 'rgba(255, 255, 255, 0.88)';
+    const bgColor = isDark ? 'rgba(28, 28, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)';
     const textColor = isDark ? '#ffffff' : '#000000';
-    const descColor = isDark ? 'rgba(255, 255, 255, 0.75)' : '#333333';
-    const borderCol = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
-    const buttonColor = isDark ? '#358aff' : '#007aff';
-    
+    const subColor = isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+    const descColor = isDark ? 'rgba(255, 255, 255, 0.85)' : '#1c1c1e';
+    const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+
     return html`
         <div style=${{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(15px)',
-            WebkitBackdropFilter: 'blur(15px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            top: 'calc(16px + env(safe-area-inset-top, 0px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
             zIndex: 10000,
-            padding: '20px',
-            animation: 'appleAlertFadeIn 0.2s ease-out'
+            width: 'calc(100% - 32px)',
+            maxWidth: '380px',
+            animation: 'bannerSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent'
         }} onClick=${onClose}>
             <div style=${{
                 backgroundColor: bgColor,
-                backdropFilter: 'blur(30px)',
-                WebkitBackdropFilter: 'blur(30px)',
-                borderRadius: '14px',
-                width: '100%',
-                maxWidth: '270px',
-                textAlign: 'center',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                animation: 'appleAlertScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderRadius: '16px',
+                padding: '12px 14px',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04)',
+                border: `1px solid ${borderColor}`,
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden'
-            }} onClick=${e => e.stopPropagation()}>
-                <div style=${{ padding: '18px 16px 14px' }}>
-                    <h4 style=${{ margin: 0, fontSize: '17px', fontWeight: 600, color: textColor, letterSpacing: '-0.4px', lineHeight: '1.25' }}>${title}</h4>
-                    <p style=${{ margin: '6px 0 0', fontSize: '13px', color: descColor, letterSpacing: '-0.1px', lineHeight: '1.4', fontWeight: 400 }}>${text}</p>
+                gap: '6px'
+            }}>
+                <div style=${{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%'
+                }}>
+                    <div style=${{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style=${{
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '4px',
+                            background: 'linear-gradient(135deg, var(--indigo), var(--purple))',
+                            display: 'grid',
+                            placeItems: 'center',
+                            color: '#fff',
+                            fontSize: '9px',
+                            fontWeight: 'bold'
+                        }}>F+</div>
+                        <span style=${{ fontSize: '11px', fontWeight: 600, color: subColor, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Finals+</span>
+                    </div>
+                    <span style=${{ fontSize: '11px', color: subColor }}>now</span>
                 </div>
-                <div style=${{ borderTop: `0.5px solid ${borderCol}`, display: 'flex' }}>
-                    <button style=${{
-                        flex: 1,
-                        background: 'none',
-                        border: 'none',
-                        color: buttonColor,
-                        fontSize: '17px',
-                        fontWeight: 600,
-                        padding: '12px 10px',
-                        cursor: 'pointer',
-                        letterSpacing: '-0.4px',
-                        outline: 'none',
-                        WebkitTapHighlightColor: 'transparent'
-                    }} onClick=${onClose}>OK</button>
+                <div>
+                    <h5 style=${{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: textColor }}>${type === 'error' ? 'Import Failed' : 'Notification'}</h5>
+                    <p style=${{ margin: '2px 0 0 0', fontSize: '13px', color: descColor, lineHeight: 1.35 }}>${text}</p>
                 </div>
             </div>
         </div>
     `;
 };
+
 
 const Modal = ({ isOpen, onClose, title, content }) => {
     if (!isOpen) return null;
@@ -824,7 +831,15 @@ const App = () => {
             }
             setMessage({ type: enriched.length ? 'success' : 'error', text: `Timetable returned ${codes.length} course code(s). Saved ${enriched.length} final exam subject(s) with lecturer details when available. ${missing.length ? `No final exam record for: ${missing.join(', ')}.` : ''}` });
         } catch (error) {
-            setMessage({ type: 'error', text: `Matric import could not complete from this static page. It may need a backend proxy if an external API blocks browser requests. Details: ${error.message}` });
+            let cleanMsg = error.message || '';
+            if (cleanMsg.includes('Failed to fetch timetable') || cleanMsg.includes('fetchDataMatrix')) {
+                cleanMsg = 'The timetable service may be temporarily offline, or the matric number entered is incorrect. Please check your matric number and try again.';
+            } else if (cleanMsg.includes('No course codes')) {
+                cleanMsg = 'No active courses were found for this matric number. Please check the number and try again.';
+            } else {
+                cleanMsg = `Unable to import timetable. Details: ${cleanMsg}`;
+            }
+            setMessage({ type: 'error', text: cleanMsg });
         } finally {
             setBusy(false);
         }
@@ -846,7 +861,7 @@ const App = () => {
             <${Hero} exams=${exams} ><//>
             <${AddPanel} onAdd=${addCodes} onImport=${importMatric} busy=${busy} ><//>
             ${message && message.type === 'error' ? html`
-                <${AppleAlert} isOpen=${true} onClose=${() => setMessage(null)} title="Alert" text=${message.text}><//>
+                <${NotificationBanner} isOpen=${true} onClose=${() => setMessage(null)} type="error" text=${message.text}><//>
             ` : message ? html`
                 <div className=${`message ${message.type === 'success' ? 'success' : ''}`}>${message.text}</div>
             ` : null}
