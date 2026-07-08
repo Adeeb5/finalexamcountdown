@@ -331,17 +331,12 @@ const NotificationBanner = ({ isOpen, onClose, type, text }) => {
                     width: '100%'
                 }}>
                     <div style=${{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <div style=${{
+                        <img src="/assets/logo-icon.png" alt="F+" style=${{
                             width: '18px',
                             height: '18px',
                             borderRadius: '4px',
-                            background: 'linear-gradient(135deg, var(--indigo), var(--purple))',
-                            display: 'grid',
-                            placeItems: 'center',
-                            color: '#fff',
-                            fontSize: '9px',
-                            fontWeight: 'bold'
-                        }}>F+</div>
+                            objectFit: 'contain'
+                        }} />
                         <span style=${{ fontSize: '11px', fontWeight: 600, color: subColor, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Finals+</span>
                     </div>
                     <span style=${{ fontSize: '11px', color: subColor }}>now</span>
