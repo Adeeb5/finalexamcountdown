@@ -581,7 +581,7 @@ const Hero = ({ exams }) => {
         isCountdown = true;
         label = `remaining to ${nextExam.code}`;
         if (timeLeft.days > 0) {
-            mainCount = `${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s`;
+            mainCount = `${timeLeft.days} ${timeLeft.days === 1 ? 'day' : 'days'}`;
         } else if (timeLeft.hours > 0) {
             mainCount = `${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s`;
         } else if (timeLeft.minutes > 0) {

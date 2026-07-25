@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finals-widget-cache-v4';
+const CACHE_NAME = 'finals-widget-cache-v5';
 const TEMPLATE_URL = '/finals-widget-template.json';
 const DATA_URL = '/finals-widget-data.json';
 
@@ -9,7 +9,7 @@ self.addEventListener('install', event => {
       return cache.addAll([
         '/',
         '/index.html',
-        '/assets/app.js?v=5',
+        '/assets/app.js?v=6',
         '/assets/logo-icon-192.png',
         '/assets/logo-pwa-512.png',
         '/assets/logo-icon.png',
