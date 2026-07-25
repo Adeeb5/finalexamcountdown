@@ -571,8 +571,22 @@ const MobileGlassNav = ({ darkMode, onToggleTheme }) => {
 const Hero = ({ exams }) => {
     const upcoming = exams.filter(exam => getStatus(exam) === 'upcoming').sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
     const nextExam = upcoming[0];
-    const main = nextExam ? calculateTimeLeft(nextExam.dateStr)?.days ?? 0 : exams.length;
-    const label = nextExam ? `days to ${nextExam.code}` : exams.length ? 'saved exam subjects' : 'saved subjects';
+    const timeLeft = nextExam ? calculateTimeLeft(nextExam.dateStr) : null;
+    
+    let mainCount = String(exams.length).padStart(2, '0');
+    let label = exams.length ? 'saved exam subjects' : 'saved subjects';
+    let isCountdown = false;
+
+    if (nextExam && timeLeft) {
+        isCountdown = true;
+        label = `remaining to ${nextExam.code}`;
+        if (timeLeft.days > 0) {
+            mainCount = `${timeLeft.days}d ${String(timeLeft.hours).padStart(2, '0')}h ${String(timeLeft.minutes).padStart(2, '0')}m ${String(timeLeft.seconds).padStart(2, '0')}s`;
+        } else {
+            mainCount = `${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`;
+        }
+    }
+
     const preview = (exams.length ? exams : [
         { code: 'CSC207', dateStr: new Date(Date.now() + 86400000 * 12).toISOString(), rawTime: '9:00:00 AM - 12:00:00 PM' },
         { code: 'MAT210', dateStr: new Date(Date.now() + 86400000 * 16).toISOString(), rawTime: '9:00:00 AM - 11:00:00 AM' },
@@ -601,7 +615,7 @@ const Hero = ({ exams }) => {
                                 </span>
                                 <span>${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
                             </div>
-                            <div className="big-count">${String(main).padStart(2, '0')}</div>
+                            <div className=${`big-count ${isCountdown ? 'countdown-mode' : ''}`}>${mainCount}</div>
                             <p className="device-label">${label}</p>
                             <div className="mini-stack">
                                 ${preview.map(exam => html`
@@ -761,8 +775,14 @@ const Schedule = ({ exams, onClear }) => {
 };
 
 const App = () => {
-    useClock();
-    const [exams, setExams] = useState(loadStored);
+    const [tick, setTick] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick(t => t + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
     const [modal, setModal] = useState({ isOpen: false, title: '', content: null });
