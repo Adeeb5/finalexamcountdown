@@ -787,6 +787,7 @@ const App = () => {
         }, 1000);
         return () => clearInterval(interval);
     }, []);
+    const [exams, setExams] = useState(loadStored);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
     const [modal, setModal] = useState({ isOpen: false, title: '', content: null });
