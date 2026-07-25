@@ -581,9 +581,13 @@ const Hero = ({ exams }) => {
         isCountdown = true;
         label = `remaining to ${nextExam.code}`;
         if (timeLeft.days > 0) {
-            mainCount = `${timeLeft.days}d ${String(timeLeft.hours).padStart(2, '0')}h ${String(timeLeft.minutes).padStart(2, '0')}m ${String(timeLeft.seconds).padStart(2, '0')}s`;
-        } else {
+            mainCount = `${String(timeLeft.days).padStart(2, '0')} days`;
+        } else if (timeLeft.hours > 0) {
             mainCount = `${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`;
+        } else if (timeLeft.minutes > 0) {
+            mainCount = `${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`;
+        } else {
+            mainCount = `${String(timeLeft.seconds).padStart(2, '0')}s`;
         }
     }
 
