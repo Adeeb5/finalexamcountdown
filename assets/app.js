@@ -910,6 +910,7 @@ const App = () => {
     const addCodes = async value => {
         const codes = parseCodes(value);
         if (!codes.length) { setMessage({ type: 'error', text: 'Enter at least one valid course code, for example CSC207.' }); return; }
+        const startTime = Date.now();
         setLoadingInfo({
             active: true,
             title: 'Fetching Course Schedule',
@@ -934,6 +935,10 @@ const App = () => {
         } catch (error) {
             setMessage({ type: 'error', text: `Could not fetch directly from SIMS. Details: ${error.message}` });
         } finally {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 800) {
+                await new Promise(r => setTimeout(r, 800 - elapsed));
+            }
             setBusy(false);
             setLoadingInfo(prev => ({ ...prev, active: false }));
         }
@@ -941,6 +946,7 @@ const App = () => {
 
     const importMatric = async studentId => {
         if (!studentId.trim()) { setMessage({ type: 'error', text: 'Enter a matric number first.' }); return; }
+        const startTime = Date.now();
         setLoadingInfo({
             active: true,
             title: 'Importing Student Schedule',
@@ -979,6 +985,10 @@ const App = () => {
             }
             setMessage({ type: 'error', text: cleanMsg });
         } finally {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 800) {
+                await new Promise(r => setTimeout(r, 800 - elapsed));
+            }
             setBusy(false);
             setLoadingInfo(prev => ({ ...prev, active: false }));
         }
