@@ -1136,7 +1136,7 @@ const App = () => {
         setLoadingInfo({
             active: true,
             title: 'Importing Student Schedule',
-            subtitle: 'Step 1/2 — Fetching your timetable subjects...',
+            subtitle: 'Fetching timetable subjects & matching SIMS exam dates...',
             query: `Matric No: ${rawId}`
         });
         setBusy(true);
@@ -1144,12 +1144,6 @@ const App = () => {
         try {
             const { codes, subjects } = await fetchMatricCourses(rawId);
             if (!codes.length) throw new Error('No course codes returned from timetable.');
-
-            // Update subtitle for step 2
-            setLoadingInfo(prev => ({
-                ...prev,
-                subtitle: `Step 2/2 — Checking ${codes.length} course(s) in SIMS...`
-            }));
 
             const detailsByCode = new Map(subjects.map(subject => [subject.code, subject]));
             const { found, missing } = await fetchExamSchedule(codes, true);
