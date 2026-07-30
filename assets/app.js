@@ -400,15 +400,16 @@ const NotificationBanner = ({ isOpen, onClose, type, text }) => {
 
 
 const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
-    if (!isOpen) return null;
-
     useEffect(() => {
+        if (!isOpen) return;
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         return () => {
             document.body.style.overflow = originalOverflow;
         };
     }, [isOpen]);
+
+    if (!isOpen) return null;
 
     return html`
         <div className="apple-loading-overlay" role="dialog" aria-modal="true" aria-label="Loading final exam data">
