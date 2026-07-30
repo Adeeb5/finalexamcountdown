@@ -400,10 +400,37 @@ const NotificationBanner = ({ isOpen, onClose, type, text }) => {
 
 
 const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
+    const overlayRef = React.useRef(null);
+    const cardRef = React.useRef(null);
+    const spinnerRef = React.useRef(null);
+    const glowRef = React.useRef(null);
+    const thumbRef = React.useRef(null);
+
     useEffect(() => {
         if (!isOpen) return;
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
+
+        const motion = getMotion();
+        if (motion && motion.animate) {
+            const { animate } = motion;
+            if (overlayRef.current) {
+                animate(overlayRef.current, { opacity: [0, 1] }, { duration: 0.25, easing: 'ease-out' });
+            }
+            if (cardRef.current) {
+                animate(cardRef.current, { opacity: [0, 1], scale: [0.82, 1.03, 1], y: [35, -4, 0] }, { duration: 0.45, easing: [0.175, 0.885, 0.32, 1.275] });
+            }
+            if (spinnerRef.current) {
+                animate(spinnerRef.current, { rotate: [0, 360] }, { duration: 0.85, repeat: Infinity, easing: 'linear' });
+            }
+            if (glowRef.current) {
+                animate(glowRef.current, { scale: [0.92, 1.12, 0.92], opacity: [0.2, 0.7, 0.2] }, { duration: 2.2, repeat: Infinity, easing: 'ease-in-out' });
+            }
+            if (thumbRef.current) {
+                animate(thumbRef.current, { x: ['-100%', '190%'] }, { duration: 1.4, repeat: Infinity, easing: 'ease-in-out' });
+            }
+        }
+
         return () => {
             document.body.style.overflow = originalOverflow;
         };
@@ -414,93 +441,109 @@ const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
     const isDark = document.body.classList.contains('dark-mode');
 
     return html`
-        <div style=${{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100vw',
-            height: '100vh',
-            zIndex: 999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            backgroundColor: isDark ? 'rgba(11, 14, 20, 0.82)' : 'rgba(244, 242, 250, 0.82)',
-            backdropFilter: 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-            animation: 'appleOverlayFadeIn 0.25s ease-out forwards'
-        }} role="dialog" aria-modal="true" aria-label="Loading exam schedule">
-            <div style=${{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '420px',
-                padding: '36px 28px',
-                borderRadius: '24px',
-                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(31, 36, 51, 0.12)'}`,
-                boxShadow: isDark 
-                    ? '0 30px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(120, 139, 252, 0.15)' 
-                    : '0 25px 70px rgba(54, 38, 108, 0.2), 0 4px 16px rgba(0, 0, 0, 0.05)',
+        <div 
+            ref=${overlayRef}
+            style=${{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100vw',
+                height: '100vh',
+                zIndex: 999999,
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                animation: 'appleCardScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
-            }}>
+                justifyContent: 'center',
+                padding: '20px',
+                backgroundColor: isDark ? 'rgba(11, 14, 20, 0.84)' : 'rgba(244, 242, 250, 0.84)',
+                backdropFilter: 'blur(28px) saturate(190%)',
+                WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+                animation: 'appleOverlayFadeIn 0.25s ease-out forwards'
+            }} 
+            role="dialog" 
+            aria-modal="true" 
+            aria-label="Loading exam schedule"
+        >
+            <div 
+                ref=${cardRef}
+                style=${{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '420px',
+                    padding: '38px 30px',
+                    borderRadius: '28px',
+                    backgroundColor: isDark ? 'rgba(21, 25, 34, 0.94)' : 'rgba(255, 255, 255, 0.94)',
+                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(31, 36, 51, 0.12)'}`,
+                    boxShadow: isDark 
+                        ? '0 30px 80px rgba(0, 0, 0, 0.75), 0 0 50px rgba(120, 139, 252, 0.18)' 
+                        : '0 25px 70px rgba(54, 38, 108, 0.22), 0 4px 18px rgba(0, 0, 0, 0.06)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    animation: 'appleCardScaleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
+                }}
+            >
                 <div style=${{
                     position: 'relative',
-                    width: '80px',
-                    height: '80px',
+                    width: '84px',
+                    height: '84px',
                     display: 'grid',
                     placeItems: 'center',
-                    marginBottom: '20px'
+                    marginBottom: '22px'
                 }}>
+                    <div 
+                        ref=${glowRef}
+                        style=${{
+                            position: 'absolute',
+                            inset: '-8px',
+                            borderRadius: '50%',
+                            background: 'radial-gradient(circle, var(--indigo) 0%, var(--purple) 70%, transparent 100%)',
+                            opacity: isDark ? 0.35 : 0.2,
+                            filter: 'blur(12px)',
+                            animation: 'applePulseGlow 2.4s ease-in-out infinite'
+                        }}
+                    ></div>
+                    <div 
+                        ref=${spinnerRef}
+                        style=${{
+                            position: 'absolute',
+                            inset: 0,
+                            borderRadius: '50%',
+                            border: `3.5px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'var(--soft)'}`,
+                            borderTopColor: isDark ? '#788bfc' : 'var(--indigo)',
+                            borderRightColor: isDark ? '#9a8bfc' : 'var(--purple)',
+                            borderBottomColor: 'var(--gold)',
+                            animation: 'appleSpinnerRotate 0.85s linear infinite'
+                        }}
+                    ></div>
                     <div style=${{
-                        position: 'absolute',
-                        inset: '-6px',
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, var(--indigo) 0%, var(--purple) 70%, transparent 100%)',
-                        opacity: isDark ? 0.35 : 0.2,
-                        filter: 'blur(10px)',
-                        animation: 'applePulseGlow 2.4s ease-in-out infinite'
-                    }}></div>
-                    <div style=${{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: '50%',
-                        border: `3.5px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'var(--soft)'}`,
-                        borderTopColor: isDark ? '#788bfc' : 'var(--indigo)',
-                        borderRightColor: isDark ? '#9a8bfc' : 'var(--purple)',
-                        borderBottomColor: 'var(--gold)',
-                        animation: 'appleSpinnerRotate 0.85s linear infinite'
-                    }}></div>
-                    <div style=${{
-                        width: '44px',
-                        height: '44px',
+                        width: '46px',
+                        height: '46px',
                         borderRadius: '50%',
                         backgroundColor: 'var(--royal)',
                         display: 'grid',
                         placeItems: 'center',
-                        boxShadow: '0 4px 12px rgba(54, 38, 108, 0.3)'
+                        boxShadow: '0 4px 14px rgba(54, 38, 108, 0.35)',
+                        zIndex: 2
                     }}>
-                        <img src="/assets/logo-icon-white.png" alt="Finals+" style=${{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                        <img src="/assets/logo-icon-white.png" alt="Finals+" style=${{ width: '24px', height: '24px', objectFit: 'contain' }} />
                     </div>
                 </div>
 
                 <h3 style=${{
                     fontFamily: 'var(--font-display)',
-                    fontSize: '21px',
+                    fontSize: '22px',
                     fontWeight: 700,
                     color: 'var(--ink)',
                     margin: '0 0 6px 0',
                     letterSpacing: '-0.02em'
                 }}>${title || 'Fetching schedule...'}</h3>
                 <p style=${{
-                    fontSize: '13.5px',
+                    fontSize: '14px',
                     color: 'var(--muted)',
-                    margin: '0 0 18px 0',
+                    margin: '0 0 20px 0',
                     lineHeight: 1.45
                 }}>${subtitle || 'Connecting to official UiTM SIMS exam schedule...'}</p>
 
@@ -509,11 +552,11 @@ const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
-                        padding: '6px 14px',
+                        padding: '6px 16px',
                         borderRadius: '999px',
                         backgroundColor: 'var(--soft)',
                         border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'var(--line)'}`,
-                        fontSize: '12.5px',
+                        fontSize: '13px',
                         fontWeight: 600,
                         color: isDark ? '#788bfc' : 'var(--indigo)',
                         maxWidth: '100%',
@@ -533,17 +576,20 @@ const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'var(--soft)',
                     overflow: 'hidden',
                     position: 'relative',
-                    marginTop: '22px'
+                    marginTop: '24px'
                 }}>
-                    <div style=${{
-                        position: 'absolute',
-                        top: 0,
-                        bottom: 0,
-                        width: '55%',
-                        borderRadius: '999px',
-                        background: 'linear-gradient(90deg, var(--indigo), var(--purple), var(--gold))',
-                        animation: 'appleShimmerBar 1.4s ease-in-out infinite'
-                    }}></div>
+                    <div 
+                        ref=${thumbRef}
+                        style=${{
+                            position: 'absolute',
+                            top: 0,
+                            bottom: 0,
+                            width: '50%',
+                            borderRadius: '999px',
+                            background: 'linear-gradient(90deg, var(--indigo), var(--purple), var(--gold))',
+                            animation: 'appleShimmerBar 1.4s ease-in-out infinite'
+                        }}
+                    ></div>
                 </div>
             </div>
         </div>
