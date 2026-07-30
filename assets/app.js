@@ -399,6 +399,43 @@ const NotificationBanner = ({ isOpen, onClose, type, text }) => {
 };
 
 
+const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
+    if (!isOpen) return null;
+
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [isOpen]);
+
+    return html`
+        <div className="apple-loading-overlay" role="dialog" aria-modal="true" aria-label="Loading final exam data">
+            <div className="apple-loading-card">
+                <div className="apple-spinner-wrapper">
+                    <div className="apple-spinner-glow"></div>
+                    <div className="apple-spinner-ring"></div>
+                    <div className="apple-spinner-center">
+                        <img src="/assets/logo-icon-white.png" alt="Finals+" />
+                    </div>
+                </div>
+                <h3 className="apple-loading-title">${title || 'Fetching schedule...'}</h3>
+                <p className="apple-loading-subtitle">${subtitle || 'Connecting to official UiTM SIMS exam schedule...'}</p>
+                ${query ? html`
+                    <div className="apple-loading-badge">
+                        <${Icon} name="Search" size=${14} ><//>
+                        <span>${query}</span>
+                    </div>
+                ` : null}
+                <div className="apple-shimmer-track">
+                    <div className="apple-shimmer-thumb"></div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
 const Modal = ({ isOpen, onClose, title, content }) => {
     if (!isOpen) return null;
     return html`
@@ -644,6 +681,19 @@ const Hero = ({ exams }) => {
 const AddPanel = ({ onAdd, onImport, busy }) => {
     const [codes, setCodes] = useState('');
     const [studentId, setStudentId] = useState('');
+
+    const handleAddKeyDown = e => {
+        if (e.key === 'Enter' && !busy) {
+            onAdd(codes);
+        }
+    };
+
+    const handleImportKeyDown = e => {
+        if (e.key === 'Enter' && !busy) {
+            onImport(studentId);
+        }
+    };
+
     return html`
         <section className="section light" id="add">
             <div className="wrap center">
@@ -654,8 +704,11 @@ const AddPanel = ({ onAdd, onImport, busy }) => {
                         <h3>Add by course code</h3>
                         <p>Enter one or many codes separated by commas.</p>
                         <div className="input-row">
-                            <input value=${codes} onChange=${e => setCodes(e.target.value.toUpperCase())} placeholder="CSC207, ICT200, MAT210" aria-label="Course codes" />
-                            <button className="pill primary" disabled=${busy} onClick=${() => onAdd(codes)}><${Icon} name="Search" size=${18} ><//> Fetch</button>
+                            <input value=${codes} onKeyDown=${handleAddKeyDown} onChange=${e => setCodes(e.target.value.toUpperCase())} placeholder="CSC207, ICT200, MAT210" aria-label="Course codes" />
+                            <button className="pill primary" disabled=${busy} onClick=${() => onAdd(codes)}>
+                                <${Icon} name=${busy ? "Loader2" : "Search"} size=${18} className=${busy ? "icon spin" : "icon"} ><//>
+                                ${busy ? 'Fetching...' : 'Fetch'}
+                            </button>
                         </div>
                         <div className="help">Fetched subjects are cached locally in this browser and restored when the site opens again.</div>
                     </div>
@@ -663,8 +716,11 @@ const AddPanel = ({ onAdd, onImport, busy }) => {
                         <h3>Import by matric no.</h3>
                         <p>Uses the UiTM Timetable matric flow to get subjects, then checks those codes against SIMS final exam records.</p>
                         <div className="input-row">
-                            <input value=${studentId} onChange=${e => setStudentId(e.target.value)} placeholder="Student ID / matric no." aria-label="Student ID or matric number" />
-                            <button className="pill primary" disabled=${busy} onClick=${() => onImport(studentId)}><${Icon} name="Download" size=${18} ><//> Import</button>
+                            <input value=${studentId} onKeyDown=${handleImportKeyDown} onChange=${e => setStudentId(e.target.value)} placeholder="Student ID / matric no." aria-label="Student ID or matric number" />
+                            <button className="pill primary" disabled=${busy} onClick=${() => onImport(studentId)}>
+                                <${Icon} name=${busy ? "Loader2" : "Download"} size=${18} className=${busy ? "icon spin" : "icon"} ><//>
+                                ${busy ? 'Importing...' : 'Import'}
+                            </button>
                         </div>
                         <div className="help">The matric number is only sent when Import is pressed. This app does not save it.</div>
                     </div>
@@ -789,6 +845,7 @@ const App = () => {
     }, []);
     const [exams, setExams] = useState(loadStored);
     const [busy, setBusy] = useState(false);
+    const [loadingInfo, setLoadingInfo] = useState({ active: false, title: '', subtitle: '', query: '' });
     const [message, setMessage] = useState(null);
     const [modal, setModal] = useState({ isOpen: false, title: '', content: null });
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
@@ -853,6 +910,12 @@ const App = () => {
     const addCodes = async value => {
         const codes = parseCodes(value);
         if (!codes.length) { setMessage({ type: 'error', text: 'Enter at least one valid course code, for example CSC207.' }); return; }
+        setLoadingInfo({
+            active: true,
+            title: 'Fetching Course Schedule',
+            subtitle: 'Connecting to official UiTM SIMS exam schedule...',
+            query: codes.join(', ')
+        });
         setBusy(true);
         setMessage({ type: 'info', text: `Fetching ${codes.join(', ')} from SIMS exam schedule...` });
         try {
@@ -869,14 +932,21 @@ const App = () => {
             if (missing.length) parts.push(`No final exam record found for ${missing.join(', ')}.`);
             setMessage({ type: found.length ? 'success' : 'error', text: parts.join(' ') });
         } catch (error) {
-            setMessage({ type: 'error', text: `Could not fetch directly from SIMS. The official endpoint may block browser CORS, which means deployment needs a small backend proxy. Details: ${error.message}` });
+            setMessage({ type: 'error', text: `Could not fetch directly from SIMS. Details: ${error.message}` });
         } finally {
             setBusy(false);
+            setLoadingInfo(prev => ({ ...prev, active: false }));
         }
     };
 
     const importMatric = async studentId => {
         if (!studentId.trim()) { setMessage({ type: 'error', text: 'Enter a matric number first.' }); return; }
+        setLoadingInfo({
+            active: true,
+            title: 'Importing Student Schedule',
+            subtitle: 'Fetching timetable courses & matching SIMS exam dates...',
+            query: `Matric No: ${studentId.trim()}`
+        });
         setBusy(true);
         setMessage({ type: 'info', text: 'Fetching timetable subjects, then checking finals in SIMS...' });
         try {
@@ -910,6 +980,7 @@ const App = () => {
             setMessage({ type: 'error', text: cleanMsg });
         } finally {
             setBusy(false);
+            setLoadingInfo(prev => ({ ...prev, active: false }));
         }
     };
 
@@ -925,6 +996,7 @@ const App = () => {
 
     return html`
         <${React.Fragment}>
+            <${AppleLoadingScreen} isOpen=${busy || loadingInfo.active} title=${loadingInfo.title} subtitle=${loadingInfo.subtitle} query=${loadingInfo.query} ><//>
             <${Nav} darkMode=${darkMode} onToggleTheme=${() => setDarkMode(!darkMode)}><//>
             <${Hero} exams=${exams} ><//>
             <${AddPanel} onAdd=${addCodes} onImport=${importMatric} busy=${busy} ><//>
