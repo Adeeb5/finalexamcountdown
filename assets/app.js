@@ -114,39 +114,24 @@ function parseSimsHtml(html, requestedCodes) {
     return { found, missing: requestedCodes.filter(code => !foundCodes.has(code)) };
 }
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        clearTimeout(timer);
-        return response;
-    } catch (err) {
-        clearTimeout(timer);
-        if (err.name === 'AbortError') {
-            throw new Error('Connection timed out. The server took too long to respond. Please check your network and try again.');
-        }
-        throw err;
-    }
-}
 
 async function fetchExamSchedule(codes, skipAims = false) {
-    const res = await fetchWithTimeout(SIMS_URL, {
+    const res = await fetch(SIMS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({ codes: codes.join(','), skip_aims: skipAims ? 'true' : 'false' }),
-    }, 12000);
+    });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || `SIMS returned ${res.status}`);
     return payload;
 }
 
 async function fetchMatricCourses(studentId) {
-    const res = await fetchWithTimeout(MATRIC_URL, {
+    const res = await fetch(MATRIC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({ studentId: studentId.trim() }),
-    }, 12000);
+    });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || `Timetable service returned ${res.status}`);
     return {
@@ -1167,8 +1152,6 @@ const App = () => {
                 cleanMsg = 'The timetable service may be temporarily offline, or the matric number is incorrect. Please check and try again.';
             } else if (cleanMsg.includes('No course codes')) {
                 cleanMsg = 'No active courses were found for this matric number. Please check the number and try again.';
-            } else if (cleanMsg.includes('timed out')) {
-                cleanMsg = cleanMsg;
             } else {
                 cleanMsg = `Unable to import timetable. ${cleanMsg}`;
             }
