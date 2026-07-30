@@ -411,26 +411,139 @@ const AppleLoadingScreen = ({ isOpen, title, subtitle, query }) => {
 
     if (!isOpen) return null;
 
+    const isDark = document.body.classList.contains('dark-mode');
+
     return html`
-        <div className="apple-loading-overlay" role="dialog" aria-modal="true" aria-label="Loading final exam data">
-            <div className="apple-loading-card">
-                <div className="apple-spinner-wrapper">
-                    <div className="apple-spinner-glow"></div>
-                    <div className="apple-spinner-ring"></div>
-                    <div className="apple-spinner-center">
-                        <img src="/assets/logo-icon-white.png" alt="Finals+" />
+        <div style=${{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            backgroundColor: isDark ? 'rgba(11, 14, 20, 0.82)' : 'rgba(244, 242, 250, 0.82)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            animation: 'appleOverlayFadeIn 0.25s ease-out forwards'
+        }} role="dialog" aria-modal="true" aria-label="Loading exam schedule">
+            <div style=${{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '420px',
+                padding: '36px 28px',
+                borderRadius: '24px',
+                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.92)' : 'rgba(255, 255, 255, 0.92)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(31, 36, 51, 0.12)'}`,
+                boxShadow: isDark 
+                    ? '0 30px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(120, 139, 252, 0.15)' 
+                    : '0 25px 70px rgba(54, 38, 108, 0.2), 0 4px 16px rgba(0, 0, 0, 0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                animation: 'appleCardScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            }}>
+                <div style=${{
+                    position: 'relative',
+                    width: '80px',
+                    height: '80px',
+                    display: 'grid',
+                    placeItems: 'center',
+                    marginBottom: '20px'
+                }}>
+                    <div style=${{
+                        position: 'absolute',
+                        inset: '-6px',
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, var(--indigo) 0%, var(--purple) 70%, transparent 100%)',
+                        opacity: isDark ? 0.35 : 0.2,
+                        filter: 'blur(10px)',
+                        animation: 'applePulseGlow 2.4s ease-in-out infinite'
+                    }}></div>
+                    <div style=${{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '50%',
+                        border: `3.5px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'var(--soft)'}`,
+                        borderTopColor: isDark ? '#788bfc' : 'var(--indigo)',
+                        borderRightColor: isDark ? '#9a8bfc' : 'var(--purple)',
+                        borderBottomColor: 'var(--gold)',
+                        animation: 'appleSpinnerRotate 0.85s linear infinite'
+                    }}></div>
+                    <div style=${{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--royal)',
+                        display: 'grid',
+                        placeItems: 'center',
+                        boxShadow: '0 4px 12px rgba(54, 38, 108, 0.3)'
+                    }}>
+                        <img src="/assets/logo-icon-white.png" alt="Finals+" style=${{ width: '22px', height: '22px', objectFit: 'contain' }} />
                     </div>
                 </div>
-                <h3 className="apple-loading-title">${title || 'Fetching schedule...'}</h3>
-                <p className="apple-loading-subtitle">${subtitle || 'Connecting to official UiTM SIMS exam schedule...'}</p>
+
+                <h3 style=${{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '21px',
+                    fontWeight: 700,
+                    color: 'var(--ink)',
+                    margin: '0 0 6px 0',
+                    letterSpacing: '-0.02em'
+                }}>${title || 'Fetching schedule...'}</h3>
+                <p style=${{
+                    fontSize: '13.5px',
+                    color: 'var(--muted)',
+                    margin: '0 0 18px 0',
+                    lineHeight: 1.45
+                }}>${subtitle || 'Connecting to official UiTM SIMS exam schedule...'}</p>
+
                 ${query ? html`
-                    <div className="apple-loading-badge">
+                    <div style=${{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 14px',
+                        borderRadius: '999px',
+                        backgroundColor: 'var(--soft)',
+                        border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'var(--line)'}`,
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        color: isDark ? '#788bfc' : 'var(--indigo)',
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                    }}>
                         <${Icon} name="Search" size=${14} ><//>
                         <span>${query}</span>
                     </div>
                 ` : null}
-                <div className="apple-shimmer-track">
-                    <div className="apple-shimmer-thumb"></div>
+
+                <div style=${{
+                    width: '100%',
+                    height: '4px',
+                    borderRadius: '999px',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'var(--soft)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    marginTop: '22px'
+                }}>
+                    <div style=${{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        width: '55%',
+                        borderRadius: '999px',
+                        background: 'linear-gradient(90deg, var(--indigo), var(--purple), var(--gold))',
+                        animation: 'appleShimmerBar 1.4s ease-in-out infinite'
+                    }}></div>
                 </div>
             </div>
         </div>
@@ -909,16 +1022,26 @@ const App = () => {
     };
 
     const addCodes = async value => {
-        const codes = parseCodes(value);
-        if (!codes.length) { setMessage({ type: 'error', text: 'Enter at least one valid course code, for example CSC207.' }); return; }
         const startTime = Date.now();
+        const rawInput = String(value || '').trim();
         setLoadingInfo({
             active: true,
             title: 'Fetching Course Schedule',
             subtitle: 'Connecting to official UiTM SIMS exam schedule...',
-            query: codes.join(', ')
+            query: rawInput || 'Course codes'
         });
         setBusy(true);
+
+        const codes = parseCodes(value);
+        if (!codes.length) {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 600) await new Promise(r => setTimeout(r, 600 - elapsed));
+            setBusy(false);
+            setLoadingInfo(prev => ({ ...prev, active: false }));
+            setMessage({ type: 'error', text: 'Enter at least one valid course code, for example CSC207.' });
+            return;
+        }
+
         setMessage({ type: 'info', text: `Fetching ${codes.join(', ')} from SIMS exam schedule...` });
         try {
             const { found, missing } = await fetchExamSchedule(codes);
@@ -937,8 +1060,8 @@ const App = () => {
             setMessage({ type: 'error', text: `Could not fetch directly from SIMS. Details: ${error.message}` });
         } finally {
             const elapsed = Date.now() - startTime;
-            if (elapsed < 800) {
-                await new Promise(r => setTimeout(r, 800 - elapsed));
+            if (elapsed < 1200) {
+                await new Promise(r => setTimeout(r, 1200 - elapsed));
             }
             setBusy(false);
             setLoadingInfo(prev => ({ ...prev, active: false }));
@@ -946,18 +1069,28 @@ const App = () => {
     };
 
     const importMatric = async studentId => {
-        if (!studentId.trim()) { setMessage({ type: 'error', text: 'Enter a matric number first.' }); return; }
         const startTime = Date.now();
+        const rawId = String(studentId || '').trim();
         setLoadingInfo({
             active: true,
             title: 'Importing Student Schedule',
             subtitle: 'Fetching timetable courses & matching SIMS exam dates...',
-            query: `Matric No: ${studentId.trim()}`
+            query: rawId ? `Matric No: ${rawId}` : 'Checking matric number...'
         });
         setBusy(true);
+
+        if (!rawId) {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 600) await new Promise(r => setTimeout(r, 600 - elapsed));
+            setBusy(false);
+            setLoadingInfo(prev => ({ ...prev, active: false }));
+            setMessage({ type: 'error', text: 'Enter a matric number first.' });
+            return;
+        }
+
         setMessage({ type: 'info', text: 'Fetching timetable subjects, then checking finals in SIMS...' });
         try {
-            const { codes, subjects } = await fetchMatricCourses(studentId);
+            const { codes, subjects } = await fetchMatricCourses(rawId);
             if (!codes.length) throw new Error('No course codes returned from timetable.');
             const detailsByCode = new Map(subjects.map(subject => [subject.code, subject]));
             const { found, missing } = await fetchExamSchedule(codes, true);
@@ -987,8 +1120,8 @@ const App = () => {
             setMessage({ type: 'error', text: cleanMsg });
         } finally {
             const elapsed = Date.now() - startTime;
-            if (elapsed < 800) {
-                await new Promise(r => setTimeout(r, 800 - elapsed));
+            if (elapsed < 1200) {
+                await new Promise(r => setTimeout(r, 1200 - elapsed));
             }
             setBusy(false);
             setLoadingInfo(prev => ({ ...prev, active: false }));
