@@ -114,23 +114,39 @@ function parseSimsHtml(html, requestedCodes) {
     return { found, missing: requestedCodes.filter(code => !foundCodes.has(code)) };
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return response;
+    } catch (err) {
+        clearTimeout(timer);
+        if (err.name === 'AbortError') {
+            throw new Error('Connection timed out. The server took too long to respond. Please check your network and try again.');
+        }
+        throw err;
+    }
+}
+
 async function fetchExamSchedule(codes, skipAims = false) {
-    const res = await fetch(SIMS_URL, {
+    const res = await fetchWithTimeout(SIMS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({ codes: codes.join(','), skip_aims: skipAims ? 'true' : 'false' }),
-    });
+    }, 12000);
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || `SIMS returned ${res.status}`);
     return payload;
 }
 
 async function fetchMatricCourses(studentId) {
-    const res = await fetch(MATRIC_URL, {
+    const res = await fetchWithTimeout(MATRIC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({ studentId: studentId.trim() }),
-    });
+    }, 12000);
     const payload = await res.json();
     if (!res.ok) throw new Error(payload.error || `Timetable service returned ${res.status}`);
     return {
@@ -1070,24 +1086,20 @@ const App = () => {
     const addCodes = async value => {
         const startTime = Date.now();
         const rawInput = String(value || '').trim();
-        setLoadingInfo({
-            active: true,
-            title: 'Fetching Course Schedule',
-            subtitle: 'Connecting to official UiTM SIMS exam schedule...',
-            query: rawInput || 'Course codes'
-        });
-        setBusy(true);
-
         const codes = parseCodes(value);
+
         if (!codes.length) {
-            const elapsed = Date.now() - startTime;
-            if (elapsed < 600) await new Promise(r => setTimeout(r, 600 - elapsed));
-            setBusy(false);
-            setLoadingInfo(prev => ({ ...prev, active: false }));
             setMessage({ type: 'error', text: 'Enter at least one valid course code, for example CSC207.' });
             return;
         }
 
+        setLoadingInfo({
+            active: true,
+            title: 'Fetching Course Schedule',
+            subtitle: 'Searching SIMS exam records...',
+            query: codes.join(', ')
+        });
+        setBusy(true);
         setMessage({ type: 'info', text: `Fetching ${codes.join(', ')} from SIMS exam schedule...` });
         try {
             const { found, missing } = await fetchExamSchedule(codes);
@@ -1096,48 +1108,49 @@ const App = () => {
                 setTimeout(() => {
                     const el = document.getElementById('exams');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                }, 300);
             }
             const parts = [];
             if (found.length) parts.push(`Saved ${found.map(exam => exam.code).join(', ')}.`);
             if (missing.length) parts.push(`No final exam record found for ${missing.join(', ')}.`);
             setMessage({ type: found.length ? 'success' : 'error', text: parts.join(' ') });
         } catch (error) {
-            setMessage({ type: 'error', text: `Could not fetch directly from SIMS. Details: ${error.message}` });
+            setMessage({ type: 'error', text: `Could not fetch from SIMS. ${error.message}` });
         } finally {
             const elapsed = Date.now() - startTime;
-            if (elapsed < 1200) {
-                await new Promise(r => setTimeout(r, 1200 - elapsed));
-            }
+            if (elapsed < 400) await new Promise(r => setTimeout(r, 400 - elapsed));
             setBusy(false);
             setLoadingInfo(prev => ({ ...prev, active: false }));
         }
     };
 
     const importMatric = async studentId => {
-        const startTime = Date.now();
         const rawId = String(studentId || '').trim();
-        setLoadingInfo({
-            active: true,
-            title: 'Importing Student Schedule',
-            subtitle: 'Fetching timetable courses & matching SIMS exam dates...',
-            query: rawId ? `Matric No: ${rawId}` : 'Checking matric number...'
-        });
-        setBusy(true);
 
         if (!rawId) {
-            const elapsed = Date.now() - startTime;
-            if (elapsed < 600) await new Promise(r => setTimeout(r, 600 - elapsed));
-            setBusy(false);
-            setLoadingInfo(prev => ({ ...prev, active: false }));
             setMessage({ type: 'error', text: 'Enter a matric number first.' });
             return;
         }
 
+        const startTime = Date.now();
+        setLoadingInfo({
+            active: true,
+            title: 'Importing Student Schedule',
+            subtitle: 'Step 1/2 — Fetching your timetable subjects...',
+            query: `Matric No: ${rawId}`
+        });
+        setBusy(true);
         setMessage({ type: 'info', text: 'Fetching timetable subjects, then checking finals in SIMS...' });
         try {
             const { codes, subjects } = await fetchMatricCourses(rawId);
             if (!codes.length) throw new Error('No course codes returned from timetable.');
+
+            // Update subtitle for step 2
+            setLoadingInfo(prev => ({
+                ...prev,
+                subtitle: `Step 2/2 — Checking ${codes.length} course(s) in SIMS...`
+            }));
+
             const detailsByCode = new Map(subjects.map(subject => [subject.code, subject]));
             const { found, missing } = await fetchExamSchedule(codes, true);
             const enriched = found.map(exam => ({
@@ -1151,24 +1164,24 @@ const App = () => {
                 setTimeout(() => {
                     const el = document.getElementById('exams');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                }, 300);
             }
             setMessage({ type: enriched.length ? 'success' : 'error', text: `Timetable returned ${codes.length} course code(s). Saved ${enriched.length} final exam subject(s) with lecturer details when available. ${missing.length ? `No final exam record for: ${missing.join(', ')}.` : ''}` });
         } catch (error) {
             let cleanMsg = error.message || '';
             if (cleanMsg.includes('Failed to fetch timetable') || cleanMsg.includes('fetchDataMatrix')) {
-                cleanMsg = 'The timetable service may be temporarily offline, or the matric number entered is incorrect. Please check your matric number and try again.';
+                cleanMsg = 'The timetable service may be temporarily offline, or the matric number is incorrect. Please check and try again.';
             } else if (cleanMsg.includes('No course codes')) {
                 cleanMsg = 'No active courses were found for this matric number. Please check the number and try again.';
+            } else if (cleanMsg.includes('timed out')) {
+                cleanMsg = cleanMsg;
             } else {
-                cleanMsg = `Unable to import timetable. Details: ${cleanMsg}`;
+                cleanMsg = `Unable to import timetable. ${cleanMsg}`;
             }
             setMessage({ type: 'error', text: cleanMsg });
         } finally {
             const elapsed = Date.now() - startTime;
-            if (elapsed < 1200) {
-                await new Promise(r => setTimeout(r, 1200 - elapsed));
-            }
+            if (elapsed < 400) await new Promise(r => setTimeout(r, 400 - elapsed));
             setBusy(false);
             setLoadingInfo(prev => ({ ...prev, active: false }));
         }
